@@ -1,702 +1,740 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="scroll-smooth">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>智服云 CoreDesk · 全渠道智能客服中台系统设计与总体架构白皮书 (V3.0)</title>
+  <title>CoreDesk 智能客服中台 · 系统架构与详细设计说明书 (V3.0)</title>
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <!-- Mermaid.js for Interactive Diagrams -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Mermaid.js for Technical Diagrams -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   
   <style>
+    /* ==========================================================================
+       企业工程级设计规范 (Stripe / GitHub / Cloudflare Engineering Docs Style)
+       去除所有虚浮霓虹渐变、光晕、赛博朋克与过度动效，回归严谨、权威、高可读性的工业级架构规范
+       ========================================================================== */
     :root {
-      --bg: #090d16;
-      --bg-sub: #0f172a;
-      --card-bg: rgba(15, 23, 42, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --card-border-hover: rgba(56, 189, 248, 0.3);
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-sub: #64748b;
-      
-      --accent-cyan: #06b6d4;
-      --accent-blue: #3b82f6;
-      --accent-indigo: #6366f1;
-      --accent-purple: #8b5cf6;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      
-      --code-bg: #0b1120;
-      --code-border: #1e293b;
-      --sidebar-w: 290px;
-      --header-h: 64px;
-    }
-
-    [data-theme="light"] {
       --bg: #f8fafc;
       --bg-sub: #ffffff;
-      --card-bg: rgba(255, 255, 255, 0.9);
-      --card-border: rgba(15, 23, 42, 0.08);
-      --card-border-hover: rgba(2, 132, 199, 0.4);
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
+      
       --text-main: #0f172a;
-      --text-muted: #475569;
-      --text-sub: #64748b;
-      --code-bg: #f1f5f9;
-      --code-border: #cbd5e1;
+      --text-body: #334155;
+      --text-muted: #64748b;
+      --text-sub: #94a3b8;
+      
+      /* 严谨沉稳的工程企业色 */
+      --primary: #1e3a8a;          /* 经典深海蓝 */
+      --primary-sub: #2563eb;      /* 交互蓝 */
+      --primary-light: #eff6ff;    /* 浅蓝高亮底色 */
+      --primary-border: #bfdbfe;
+      
+      --success: #15803d;
+      --success-light: #f0fdf4;
+      --success-border: #bbf7d0;
+      
+      --warn: #b45309;
+      --warn-light: #fffbeb;
+      --warn-border: #fde68a;
+      
+      --danger: #b91c1c;
+      --danger-light: #fef2f2;
+      --danger-border: #fecaca;
+      
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
+      
+      --sidebar-w: 280px;
+      --header-h: 56px;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* 严谨工程师暗色模式 (GitHub Dark 风格，非霓虹) */
+    [data-theme="dark"] {
+      --bg: #0d1117;
+      --bg-sub: #161b22;
+      --surface: #161b22;
+      --surface-hover: #21262d;
+      --border: #30363d;
+      --border-dark: #484f58;
+      
+      --text-main: #f0f6fc;
+      --text-body: #c9d1d9;
+      --text-muted: #8b949e;
+      --text-sub: #6e7681;
+      
+      --primary: #388bfd;
+      --primary-sub: #58a6ff;
+      --primary-light: rgba(56, 139, 253, 0.12);
+      --primary-border: rgba(56, 139, 253, 0.3);
+      
+      --success: #3fb950;
+      --success-light: rgba(63, 185, 80, 0.12);
+      --success-border: rgba(63, 185, 80, 0.3);
+      
+      --warn: #d29922;
+      --warn-light: rgba(210, 153, 34, 0.12);
+      --warn-border: rgba(210, 153, 34, 0.3);
+      
+      --danger: #f85149;
+      --danger-light: rgba(248, 81, 73, 0.12);
+      --danger-border: rgba(248, 81, 73, 0.3);
+      
+      --code-bg: #030712;
+      --code-text: #e2e8f0;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 15px; }
     body {
       background-color: var(--bg);
-      color: var(--text-main);
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.7;
-      transition: background-color 0.25s ease, color 0.25s ease;
-      overflow-x: hidden;
+      color: var(--text-body);
+      font-family: var(--font-sans);
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.15s ease, color 0.15s ease;
     }
 
-    /* 顶部进度条与导航 */
-    .progress-bar-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: transparent;
-      z-index: 1000;
+    /* ================= 顶部工程元数据栏 ================= */
+    .top-meta-bar {
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 12px;
+      padding: 6px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+      font-family: var(--font-mono);
     }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
-      transition: width 0.1s linear;
+    .top-meta-left {
+      display: flex;
+      gap: 16px;
+    }
+    .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    header.top-header {
-      position: fixed;
+    /* ================= 顶部全局导航 ================= */
+    header.site-header {
+      position: sticky;
       top: 0;
-      left: 0;
-      right: 0;
       height: var(--header-h);
-      background: rgba(9, 13, 22, 0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--card-border);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 28px;
-      z-index: 900;
+      z-index: 100;
     }
-    [data-theme="light"] header.top-header {
-      background: rgba(255, 255, 255, 0.88);
-    }
-
-    .brand {
+    .brand-wrap {
       display: flex;
       align-items: center;
       gap: 12px;
       text-decoration: none;
       color: var(--text-main);
-      font-weight: 700;
-      font-size: 1.05rem;
-      letter-spacing: -0.02em;
     }
-    .brand-logo {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 800;
+    .brand-title {
       font-size: 16px;
-      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
-    }
-    .brand-tag {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: rgba(6, 182, 212, 0.12);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(6, 182, 212, 0.25);
-      font-weight: 600;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .btn-icon {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 7px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-    .btn-icon:hover {
-      color: var(--text-main);
-      border-color: var(--card-border-hover);
-      transform: translateY(-1px);
-    }
-
-    /* 布局容器 */
-    .layout-wrapper {
-      display: flex;
-      margin-top: var(--header-h);
-      min-height: calc(100vh - var(--header-h));
-    }
-
-    /* 侧边导航栏 */
-    aside.sidebar {
-      width: var(--sidebar-w);
-      position: fixed;
-      top: var(--header-h);
-      bottom: 0;
-      left: 0;
-      background: var(--bg-sub);
-      border-right: 1px solid var(--card-border);
-      overflow-y: auto;
-      padding: 24px 16px;
-      z-index: 800;
-    }
-    .sidebar-search {
-      position: relative;
-      margin-bottom: 20px;
-    }
-    .sidebar-search input {
-      width: 100%;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 8px 12px 8px 32px;
-      font-size: 13px;
-      color: var(--text-main);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .sidebar-search input:focus {
-      border-color: var(--accent-cyan);
-    }
-    .sidebar-search svg {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-sub);
-      width: 14px;
-      height: 14px;
-    }
-
-    .nav-group-title {
-      font-size: 11px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-sub);
-      margin: 18px 8px 8px;
+      letter-spacing: -0.01em;
     }
-    .nav-link {
+    .brand-badge {
+      font-size: 11px;
+      background: var(--primary-light);
+      color: var(--primary-sub);
+      border: 1px solid var(--primary-border);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .header-tools {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 7px 12px;
+    }
+    .btn-tool {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-body);
+      padding: 6px 12px;
       border-radius: 6px;
-      color: var(--text-muted);
-      text-decoration: none;
       font-size: 13px;
       font-weight: 500;
-      transition: all 0.15s ease;
-      margin-bottom: 2px;
-    }
-    .nav-link:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.04);
-    }
-    [data-theme="light"] .nav-link:hover {
-      background: rgba(0, 0, 0, 0.04);
-    }
-    .nav-link.active {
-      color: var(--accent-cyan);
-      background: rgba(6, 182, 212, 0.1);
-      font-weight: 600;
-      border-left: 2px solid var(--accent-cyan);
-    }
-
-    /* 主内容区 */
-    main.content-area {
-      margin-left: var(--sidebar-w);
-      flex: 1;
-      padding: 40px 60px 100px;
-      max-width: 1200px;
-    }
-
-    /* Hero Banner */
-    .hero-banner {
-      background: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.15), transparent 45%),
-                  radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
-                  var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 36px 40px;
-      margin-bottom: 40px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
-    }
-    .hero-banner h1 {
-      font-size: 2.2rem;
-      font-weight: 800;
-      line-height: 1.25;
-      letter-spacing: -0.03em;
-      margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 40%, #94a3b8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    [data-theme="light"] .hero-banner h1 {
-      background: linear-gradient(135deg, #0f172a 40%, #475569);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .hero-banner p.lead {
-      font-size: 1.05rem;
-      color: var(--text-muted);
-      max-width: 860px;
-      margin-bottom: 24px;
-    }
-    .hero-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .pill {
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      background: var(--code-bg);
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
+      transition: all 0.15s;
     }
-    .status-pulse {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent-emerald);
-      box-shadow: 0 0 8px var(--accent-emerald);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+    .btn-tool:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-dark);
+      color: var(--text-main);
     }
 
-    /* KPI 卡片网格 */
-    .kpi-grid {
+    /* ================= 页面布局结构 ================= */
+    .doc-layout {
+      display: flex;
+      max-width: 1540px;
+      margin: 0 auto;
+    }
+
+    /* ================= 侧边导航栏 (Documentation TOC) ================= */
+    aside.doc-sidebar {
+      width: var(--sidebar-w);
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      padding: 24px 16px;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .sidebar-filter {
+      margin-bottom: 16px;
+    }
+    .sidebar-filter input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      font-size: 12.5px;
+      border-radius: 6px;
+      color: var(--text-main);
+      outline: none;
+    }
+    .sidebar-filter input:focus {
+      border-color: var(--primary-sub);
+    }
+    .toc-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin: 18px 8px 6px;
+    }
+    .toc-link {
+      display: block;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: var(--text-body);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+      border-left: 2px solid transparent;
+    }
+    .toc-link:hover {
+      background: var(--surface-hover);
+      color: var(--text-main);
+    }
+    .toc-link.active {
+      background: var(--primary-light);
+      color: var(--primary-sub);
+      font-weight: 600;
+      border-left-color: var(--primary-sub);
+    }
+    .toc-link span.num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-right: 6px;
+    }
+
+    /* ================= 主文档内容容器 ================= */
+    main.doc-content {
+      flex: 1;
+      padding: 36px 56px 120px;
+      max-width: 1040px;
+    }
+
+    /* 严谨白皮书文档抬头 */
+    .spec-header-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    }
+    .spec-meta-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      margin-bottom: 40px;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
     }
-    .kpi-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.2s ease;
-    }
-    .kpi-card:hover {
-      border-color: var(--card-border-hover);
-      transform: translateY(-2px);
-    }
-    .kpi-label {
-      font-size: 12px;
-      color: var(--text-sub);
+    .spec-meta-item .label {
+      font-size: 11px;
+      color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+    .spec-meta-item .val {
+      font-size: 13px;
+      color: var(--text-main);
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    h1.spec-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+    p.spec-lead {
+      font-size: 15px;
+      color: var(--text-body);
+      line-height: 1.7;
+    }
+
+    /* 章节容器与标题体系 */
+    section.doc-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px 36px;
+      margin-bottom: 28px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+    h2.section-heading {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.01em;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h2.section-heading .sec-num {
+      font-family: var(--font-mono);
+      color: var(--primary-sub);
+      font-size: 15px;
+      background: var(--primary-light);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--primary-border);
+    }
+    h3.sub-heading {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 24px 0 10px;
+    }
+    p {
+      margin-bottom: 14px;
+      font-size: 14.5px;
+    }
+    ul, ol {
+      margin: 12px 0 16px 24px;
+      font-size: 14px;
+    }
+    li {
       margin-bottom: 6px;
     }
-    .kpi-value {
-      font-size: 1.85rem;
-      font-weight: 800;
-      color: var(--text-main);
-      font-family: 'JetBrains Mono', monospace;
-      letter-spacing: -0.04em;
+
+    /* KPI 数据指标矩阵 (干净利落的工程数字卡) */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin: 20px 0;
     }
-    .kpi-desc {
+    .metric-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .metric-box .metric-name {
       font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .metric-box .metric-number {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+    .metric-box .metric-note {
+      font-size: 11.5px;
       color: var(--text-muted);
       margin-top: 4px;
     }
 
-    /* 章节容器与标题 */
-    section.doc-section {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 36px;
-      margin-bottom: 36px;
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.15);
-    }
-    h2.section-title {
-      font-size: 1.55rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 18px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--card-border);
-    }
-    .title-num {
-      color: var(--accent-cyan);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.15rem;
-      font-weight: 700;
-    }
-    h3.sub-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: var(--text-main);
-      margin: 28px 0 12px;
-    }
-    p { margin-bottom: 14px; color: var(--text-muted); }
-
-    /* Mermaid 渲染容器 */
-    .diagram-container {
-      background: var(--code-bg);
-      border: 1px solid var(--code-border);
-      border-radius: 12px;
-      padding: 24px;
+    /* 标准架构图展示区 */
+    .diagram-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 20px;
       margin: 20px 0;
       overflow-x: auto;
       text-align: center;
     }
     .diagram-caption {
       font-size: 12px;
-      color: var(--text-sub);
-      margin-top: 10px;
-      font-style: italic;
+      color: var(--text-muted);
+      margin-top: 12px;
+      font-family: var(--font-mono);
     }
 
-    /* 标签页组件 (Tabs) */
-    .tabs-header {
+    /* 标准规范表格 */
+    .table-responsive {
+      overflow-x: auto;
+      margin: 18px 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    table.spec-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    table.spec-table th {
+      background: var(--bg);
+      color: var(--text-main);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    table.spec-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-body);
+      vertical-align: top;
+    }
+    table.spec-table tr:last-child td {
+      border-bottom: none;
+    }
+    table.spec-table tr:hover td {
+      background: var(--surface-hover);
+    }
+
+    /* 状态与等级胶囊 (Pills) */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .badge-primary { background: var(--primary-light); color: var(--primary-sub); border: 1px solid var(--primary-border); }
+    .badge-success { background: var(--success-light); color: var(--success); border: 1px solid var(--success-border); }
+    .badge-warn { background: var(--warn-light); color: var(--warn); border: 1px solid var(--warn-border); }
+    .badge-danger { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger-border); }
+    .badge-neutral { background: var(--surface-hover); color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* 工程警告与提示框 (Callout) */
+    .callout {
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: 16px 0;
+      border-left: 4px solid;
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .callout-info {
+      background: var(--primary-light);
+      border-color: var(--primary-sub);
+      color: var(--text-main);
+    }
+    .callout-warn {
+      background: var(--warn-light);
+      border-color: var(--warn);
+      color: var(--text-main);
+    }
+    .callout-danger {
+      background: var(--danger-light);
+      border-color: var(--danger);
+      color: var(--text-main);
+    }
+
+    /* 代码块与数据契约 */
+    .code-panel {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin: 16px 0;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+    .code-panel-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 14px;
+      border-bottom: 1px solid #30363d;
       display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--card-border);
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: #8b949e;
+    }
+    .btn-copy {
+      background: transparent;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+    .btn-copy:hover {
+      background: #21262d;
+      color: #f0f6fc;
+    }
+    pre {
+      padding: 14px 16px;
+      color: var(--code-text);
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--surface-hover);
+      color: var(--primary-sub);
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    pre code {
+      background: transparent;
+      border: none;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* 严谨的阶段切换标签 (Clean Tabs) */
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 20px;
       overflow-x: auto;
     }
-    .tab-btn {
-      padding: 10px 18px;
+    .tab-item {
+      padding: 8px 16px;
       background: transparent;
       border: none;
       border-bottom: 2px solid transparent;
       color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .tab-btn:hover {
-      color: var(--text-main);
-    }
-    .tab-btn.active {
-      color: var(--accent-cyan);
-      border-bottom-color: var(--accent-cyan);
-    }
-    .tab-pane {
-      display: none;
-    }
-    .tab-pane.active {
-      display: block;
-      animation: fadeIn 0.25s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* 表格 */
-    .table-container {
-      overflow-x: auto;
-      margin: 20px 0;
-      border-radius: 10px;
-      border: 1px solid var(--card-border);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      text-align: left;
-    }
-    th {
-      background: rgba(255, 255, 255, 0.03);
-      color: var(--text-main);
-      font-weight: 600;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--card-border);
-      white-space: nowrap;
-    }
-    [data-theme="light"] th {
-      background: #f1f5f9;
-    }
-    td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--card-border);
-      color: var(--text-muted);
-      vertical-align: top;
-    }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td {
-      background: rgba(255, 255, 255, 0.02);
-    }
-    [data-theme="light"] tr:hover td {
-      background: #f8fafc;
-    }
-
-    /* 代码块与高亮 */
-    .code-wrapper {
-      position: relative;
-      background: var(--code-bg);
-      border: 1px solid var(--code-border);
-      border-radius: 10px;
-      margin: 16px 0;
-      overflow: hidden;
-    }
-    .code-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.02);
-      border-bottom: 1px solid var(--code-border);
-      font-size: 12px;
-      color: var(--text-sub);
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .copy-btn {
-      background: transparent;
-      border: 1px solid var(--code-border);
-      color: var(--text-sub);
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 11px;
+      font-size: 13.5px;
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
+      white-space: nowrap;
     }
-    .copy-btn:hover {
+    .tab-item:hover {
       color: var(--text-main);
-      border-color: var(--accent-cyan);
     }
-    pre {
-      padding: 16px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      color: #e2e8f0;
-      overflow-x: auto;
+    .tab-item.active {
+      color: var(--primary-sub);
+      font-weight: 600;
+      border-bottom-color: var(--primary-sub);
     }
-    [data-theme="light"] pre {
-      color: #1e293b;
+    .tab-content {
+      display: none;
     }
-    code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      background: rgba(255, 255, 255, 0.06);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: var(--accent-cyan);
-    }
-    [data-theme="light"] code {
-      background: #e2e8f0;
-      color: #0369a1;
+    .tab-content.active {
+      display: block;
     }
 
-    /* Callout 提示框 */
-    .callout {
-      padding: 16px 20px;
-      border-radius: 10px;
-      margin: 18px 0;
-      border-left: 4px solid;
-      font-size: 13.5px;
-    }
-    .callout-info {
-      background: rgba(6, 182, 212, 0.08);
-      border-color: var(--accent-cyan);
-      color: var(--text-main);
-    }
-    .callout-warn {
-      background: rgba(245, 158, 11, 0.08);
-      border-color: var(--accent-amber);
-      color: var(--text-main);
-    }
-    .callout-danger {
-      background: rgba(244, 63, 94, 0.08);
-      border-color: var(--accent-rose);
-      color: var(--text-main);
+    /* 打印与导出 PDF 优化 (A4 标准格式) */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 10pt;
+      }
+      .top-meta-bar, header.site-header, aside.doc-sidebar, .btn-tool, .btn-copy, .sidebar-filter {
+        display: none !important;
+      }
+      main.doc-content {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      section.doc-section {
+        border: 1px solid #cccccc !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 15mm;
+      }
+      .metric-box, .diagram-box, .code-panel {
+        page-break-inside: avoid;
+      }
     }
 
     /* 响应式调整 */
-    @media (max-width: 1024px) {
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      main.content-area { padding: 30px; }
-    }
-    @media (max-width: 768px) {
-      aside.sidebar { transform: translateX(-100%); transition: transform 0.25s; }
-      aside.sidebar.open { transform: translateX(0); }
-      main.content-area { margin-left: 0; padding: 20px; }
-      .kpi-grid { grid-template-columns: 1fr; }
-    }
-
-    /* 打印样式 */
-    @media print {
-      body { background: #fff !important; color: #000 !important; }
-      header.top-header, aside.sidebar, .btn-icon, .copy-btn { display: none !important; }
-      main.content-area { margin-left: 0 !important; padding: 0 !important; max-width: 100% !important; }
-      section.doc-section { border: 1px solid #ddd !important; box-shadow: none !important; page-break-inside: avoid; }
-      pre, code { background: #f5f5f5 !important; color: #000 !important; }
+    @media (max-width: 992px) {
+      aside.doc-sidebar { display: none; }
+      main.doc-content { padding: 24px; }
+      .metric-grid { grid-template-columns: repeat(2, 1fr); }
+      .spec-meta-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
 
-  <!-- 顶部阅读进度条 -->
-  <div class="progress-bar-container">
-    <div class="progress-bar" id="progressBar"></div>
+  <!-- 顶部工程元数据栏 -->
+  <div class="top-meta-bar">
+    <div class="top-meta-left">
+      <span class="meta-tag">文档编号: <strong>DOC-ARCH-2026-V3</strong></span>
+      <span class="meta-tag">密级: <strong>内部架构技术白皮书 (INTERNAL SPEC)</strong></span>
+      <span class="meta-tag">基线版本: <strong>V3.0.0 (Release)</strong></span>
+    </div>
+    <div>最后修订: 2026-10-16 · 架构评审委员会</div>
   </div>
 
-  <!-- 顶部导航栏 -->
-  <header class="top-header">
-    <div class="brand">
-      <div class="brand-logo">C</div>
-      <div>智服云 CoreDesk <span style="font-size:12px; font-weight:400; color:var(--text-sub)">· Architecture Spec</span></div>
-      <span class="brand-tag">V3.0 Enterprise</span>
+  <!-- 顶部主导航 -->
+  <header class="site-header">
+    <div class="brand-wrap">
+      <span class="brand-title">CoreDesk 智能客服中台</span>
+      <span class="brand-badge">ARCHITECTURE SPEC</span>
     </div>
-    <div class="header-actions">
-      <button class="btn-icon" id="themeToggleBtn" title="切换暗色/明亮模式">
-        <span id="themeIcon">☀️</span> 模式
+    <div class="header-tools">
+      <button class="btn-tool" id="themeToggleBtn">
+        <span id="themeLabel">明亮模式</span>
       </button>
-      <button class="btn-icon" onclick="window.print()" title="打印或保存为 PDF">
-        🖨️ 导出 PDF
+      <button class="btn-tool" onclick="window.print()">
+        导出 PDF / 打印
       </button>
     </div>
   </header>
 
-  <div class="layout-wrapper">
-    <!-- 侧边导航栏 -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-search">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-        <input type="text" id="navFilter" placeholder="搜索架构模块或接口...">
+  <div class="doc-layout">
+    <!-- 侧边栏 TOC 导航 -->
+    <aside class="doc-sidebar">
+      <div class="sidebar-filter">
+        <input type="text" id="navFilter" placeholder="搜索章节或 API 接口...">
       </div>
 
       <nav id="navMenu">
-        <div class="nav-group-title">架构概览</div>
-        <a href="#overview" class="nav-link active"><span>01</span> 系统背景与核心指标</a>
-        <a href="#topology" class="nav-link"><span>02</span> 总体拓扑与双引擎</a>
-        <a href="#layers" class="nav-link"><span>03</span> 逻辑分层与职责边界</a>
+        <div class="toc-section-title">总体架构设计</div>
+        <a href="#overview" class="toc-link active"><span class="num">01</span> 系统背景与核心指标</a>
+        <a href="#topology" class="toc-link"><span class="num">02</span> 总体系统架构拓扑</a>
+        <a href="#layers" class="toc-link"><span class="num">03</span> 分层职责与边界约束</a>
 
-        <div class="nav-group-title">阶段深度设计</div>
-        <a href="#phase1" class="nav-link"><span>04</span> P1: JEV网关与CQRS直连</a>
-        <a href="#phase2" class="nav-link"><span>05</span> P2: Auto-Pilot与工单Hub</a>
-        <a href="#phase3" class="nav-link"><span>06</span> P3: Action Agent执行中台</a>
-        <a href="#phase4" class="nav-link"><span>07</span> P4: 全量质检与运营BI</a>
-        <a href="#phase5" class="nav-link"><span>08</span> P5: 知识飞轮与影子沙箱</a>
+        <div class="toc-section-title">分阶段详细设计</div>
+        <a href="#phase1" class="toc-link"><span class="num">04</span> P1: JEV网关与CQRS只读</a>
+        <a href="#phase2" class="toc-link"><span class="num">05</span> P2: 风险门禁与工单Hub</a>
+        <a href="#phase3" class="toc-link"><span class="num">06</span> P3: Action Agent执行中台</a>
+        <a href="#phase4" class="toc-link"><span class="num">07</span> P4: 全量质检与运营BI</a>
+        <a href="#phase5" class="toc-link"><span class="num">08</span> P5: 知识飞轮与影子沙箱</a>
 
-        <div class="nav-group-title">协同与接入</div>
-        <a href="#omnichannel" class="nav-link"><span>09</span> IM全渠道网关 (TG/WA/LINE)</a>
-        <a href="#collaboration" class="nav-link"><span>10</span> ACD调度与班长席密语</a>
+        <div class="toc-section-title">全渠道与调度</div>
+        <a href="#omnichannel" class="toc-link"><span class="num">09</span> IM 接入网关 (TG/WA/LINE)</a>
+        <a href="#collaboration" class="toc-link"><span class="num">10</span> ACD技能组与班长席密语</a>
 
-        <div class="nav-group-title">契约与规范</div>
-        <a href="#api-contracts" class="nav-link"><span>11</span> 核心API与消息信封契约</a>
-        <a href="#security-ha" class="nav-link"><span>12</span> 10W TPS 隔离与零资损</a>
-        <a href="#deployment" class="nav-link"><span>13</span> 生产集群拓扑与资源配置</a>
+        <div class="toc-section-title">契约与运维</div>
+        <a href="#api-contracts" class="toc-link"><span class="num">11</span> 接口路由与消息信封契约</a>
+        <a href="#security-ha" class="toc-link"><span class="num">12</span> 10W TPS 隔离与零资损铁律</a>
+        <a href="#deployment" class="toc-link"><span class="num">13</span> 生产集群与部署配置</a>
       </nav>
     </aside>
 
-    <!-- 主文档内容区 -->
-    <main class="content-area">
+    <!-- 主文档正文 -->
+    <main class="doc-content">
 
-      <!-- Hero Header -->
-      <div class="hero-banner">
-        <h1>智服云 CoreDesk · 全渠道智能客服中台<br>总体系统设计与架构白皮书</h1>
-        <p class="lead">
-          基于“JEV 毫秒级决策引擎 × LLM 事实翻译生成引擎 × 确定性业务规则控制”的三元解耦架构，达成从 P1 辅助草稿、P2 分级自主应答、P3 动作闭环、P4 全量质检到 P5 知识自学习飞轮的全生命周期工业级落地。
+      <!-- 规格说明书文件抬头 -->
+      <div class="spec-header-card">
+        <div class="spec-meta-grid">
+          <div class="spec-meta-item">
+            <div class="label">系统代号</div>
+            <div class="val">智服云 CoreDesk</div>
+          </div>
+          <div class="spec-meta-item">
+            <div class="label">架构模式</div>
+            <div class="val">Dual-Engine + CQRS</div>
+          </div>
+          <div class="spec-meta-item">
+            <div class="label">实施阶段</div>
+            <div class="val">Phase 1 至 Phase 5 全闭环</div>
+          </div>
+          <div class="spec-meta-item">
+            <div class="label">交付状态</div>
+            <div class="val"><span class="badge badge-success">已投产通过</span></div>
+          </div>
+        </div>
+
+        <h1 class="spec-title">智服云 CoreDesk 全渠道智能客服中台<br>系统架构与详细设计说明书</h1>
+        <p class="spec-lead">
+          面向高并发账务查询、强合规风控及多语言（中/英/越/泰）跨境客户服务场景，构建“JEV 毫秒级决策引擎 × LLM 事实翻译生成引擎 × 确定性业务规则控制”解耦架构，达成从 Copilot 坐席辅助、Auto-Pilot 分级自主应答、Action Agent 业务闭环、100% 全量质检到自学习知识飞轮的企业级工业落地。
         </p>
-        <div class="hero-badges">
-          <span class="pill"><span class="status-pulse"></span> 生产基准 V3.0 已归档</span>
-          <span class="pill">⏱️ 前置安全决策 &lt; 1ms</span>
-          <span class="pill">⚡ Auto-Pilot 闪电闭环 &lt; 50ms</span>
-          <span class="pill">💳 账务中台 CQRS 10W TPS 零锁只读</span>
-          <span class="pill">🌐 中 / 英 / 越 / 泰 四国母语支持</span>
+      </div>
+
+      <!-- 核心指标看板 (Metric Grid) -->
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-name">Auto-Pilot 自主解决率</div>
+          <div class="metric-number">78.6%</div>
+          <div class="metric-note">标准 FAQ 与常规状态直答</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-name">前置决策延迟 (JEV)</div>
+          <div class="metric-number">&lt; 1 ms</div>
+          <div class="metric-note">语言识别 / 防注入 / 意图分类</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-name">全量会话质检覆盖率</div>
+          <div class="metric-number">100%</div>
+          <div class="metric-note">五维自动化智能打分与归因</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-name">接入渠道协议适配</div>
+          <div class="metric-number">4 类</div>
+          <div class="metric-note">Telegram / WhatsApp / LINE / Web</div>
         </div>
       </div>
 
-      <!-- KPI Grid -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-label">Auto-Pilot 自主解决率</div>
-          <div class="kpi-value" style="color:var(--accent-cyan)">78.6%</div>
-          <div class="kpi-desc">标准 FAQ 与常规账务秒级直答</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">决策平均耗时 (JEV)</div>
-          <div class="kpi-value" style="color:var(--accent-emerald)">0.42 ms</div>
-          <div class="kpi-desc">毫秒级防注入/越狱/意图识别</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">全量会话质检覆盖</div>
-          <div class="kpi-value" style="color:var(--accent-indigo)">100%</div>
-          <div class="kpi-desc">会话结束即触发五维智能打分</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">多渠道接入能力</div>
-          <div class="kpi-value" style="color:var(--accent-purple)">4 Channels</div>
-          <div class="kpi-desc">Telegram / WhatsApp / LINE / Web</div>
-        </div>
-      </div>
-
-      <!-- Section 1: Overview -->
+      <!-- 第 1 章: 系统背景与建设指标 -->
       <section class="doc-section" id="overview">
-        <h2 class="section-title"><span class="title-num">01</span> 系统背景与核心建设指标</h2>
+        <h2 class="section-heading"><span class="sec-num">01</span> 系统背景与核心建设指标</h2>
         <p>
-          在跨境金融、互动娱乐及高频业务出入金场景下，客服系统承载着大额资金咨询（充提、打码量、流水对账）与敏感客诉的高压冲击。传统方案常因<strong>大模型数字幻觉引发超额承诺</strong>、<strong>高并发查询拖垮核心账务数据库</strong>，以及<strong>客诉危机响应迟钝</strong>导致严重业务事故。
+          在出入金与打码量密集型业务场景下，客服系统是直面资金流动与用户信赖的核心通道。传统单体大模型客服在此类高风险场景存在四大致命隐患：
         </p>
+        <ol>
+          <li><strong>数字幻觉与越权承诺</strong>：概率大模型常虚构账单流水与到账时间，引发严重合规诉讼与恶意套利。</li>
+          <li><strong>高并发读写锁死</strong>：数万会员同时催单查账，直查主账务库引发严重行级锁排队，甚至拖垮主交易通道。</li>
+          <li><strong>客诉危机响应迟缓</strong>：缺少毫秒级情绪与危机监控，导致 P0 级严重客诉在普通队列中被淹没。</li>
+          <li><strong>多渠道数据孤岛</strong>：Telegram、WhatsApp、LINE 等渠道身份脱节，坐席优质处置经验无法自动反哺知识库。</li>
+        </ol>
 
         <div class="callout callout-info">
-          <strong>CoreDesk 核心设计铁律：</strong>
-          大模型仅担任“事实翻译官与多语言表达器”，绝不允许由概率模型推断或自行编造任何金额、打码量缺口或出款承诺。所有权威数据均来自业务只读网关。
+          <strong>系统控制基线：</strong>
+          大模型仅担任“事实翻译与多语言表达器”，绝不允许直接生成或推断任何账目、流水差额及业务承诺。所有权威数据均来自业务只读网关。
         </div>
 
-        <div class="table-container">
-          <table>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
                 <th>目标维度</th>
@@ -708,8 +746,8 @@
             <tbody>
               <tr>
                 <td><strong>资金安全防线</strong></td>
-                <td>单体 LLM 直接回答，频发虚假承诺</td>
-                <td><strong>确定性规则 + 只读代理 + 发送前脱敏质检</strong></td>
+                <td>单体 LLM 自由答复，频发虚假承诺</td>
+                <td><strong>确定性规则 + 只读代理 + 后置脱敏质检</strong></td>
                 <td>违规包赔承诺 100% 拦截并审计</td>
               </tr>
               <tr>
@@ -720,13 +758,13 @@
               </tr>
               <tr>
                 <td><strong>服务时效 (SLA)</strong></td>
-                <td>大模型首字生成 2~5 秒，排队阻塞</td>
+                <td>大模型首字生成耗时 2~5 秒</td>
                 <td><strong>JEV 决策 &lt; 1ms，Auto-Pilot &lt; 50ms</strong></td>
-                <td>分级放行门禁，低风险无需等 LLM 生成</td>
+                <td>分级放行门禁，低风险无需等大模型生成</td>
               </tr>
               <tr>
                 <td><strong>多渠道与协同</strong></td>
-                <td>各平台孤立，人工与机器人抢话脱节</td>
+                <td>各平台孤立，人工与机器人脱节</td>
                 <td><strong>统一 IM 网关 + ACD 技能组 + 班长席密语</strong></td>
                 <td>双向无损热切换，强插接管无缝协同</td>
               </tr>
@@ -735,14 +773,14 @@
         </div>
       </section>
 
-      <!-- Section 2: Full Topology -->
+      <!-- 第 2 章: 总体系统架构拓扑 -->
       <section class="doc-section" id="topology">
-        <h2 class="section-title"><span class="title-num">02</span> 总体架构拓扑与双引擎解耦</h2>
+        <h2 class="section-heading"><span class="sec-num">02</span> 总体系统架构拓扑与双引擎驱动</h2>
         <p>
           系统采用解耦的“双引擎驱动（Dual-Engine Paradigm）”：<strong>System 1</strong> 负责毫秒级快速研判、语言分类与安全防线；<strong>System 2</strong> 负责受控自然语言多语言表达；中间由<strong>确定性业务控制网关</strong>构筑防线。
         </p>
 
-        <div class="diagram-container">
+        <div class="diagram-box">
           <div class="mermaid">
 graph TD
     Client["🌐 客户端接入 / 多语言会员 (ZH/EN/VI/TH)"] --> JEV_Gate["⚡ JEV 前置安全网关 (<1ms 路由/防注入/鉴权)"]
@@ -776,59 +814,59 @@ graph TD
     CandidatePool -->|一键审核沉淀| RAG
     CandidatePool --> ShadowSandbox["🧪 影子评测沙箱 (候选模型 vs 基线模型 A/B 对比)"]
           </div>
-          <div class="diagram-caption">图 1: CoreDesk 全生命周期双引擎系统架构拓扑</div>
+          <div class="diagram-caption">图 2.1: CoreDesk 全生命周期双引擎系统架构拓扑</div>
         </div>
       </section>
 
-      <!-- Section 3: Logical Layers -->
+      <!-- 第 3 章: 逻辑分层与职责边界 -->
       <section class="doc-section" id="layers">
-        <h2 class="section-title"><span class="title-num">03</span> 逻辑分层与职责边界</h2>
-        <div class="table-container">
-          <table>
+        <h2 class="section-heading"><span class="sec-num">03</span> 分层职责与边界约束</h2>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
                 <th>架构层级</th>
-                <th>主要组件</th>
-                <th>输入数据</th>
+                <th>核心模块</th>
+                <th>输入协议/数据</th>
                 <th>输出产物</th>
-                <th>核心职责与边界</th>
+                <th>核心边界与约束</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>接入层</strong></td>
+                <td><strong>渠道接入层</strong></td>
                 <td><code>im_channel_gateway.py</code></td>
-                <td>原始 Webhook / HTTP Payload</td>
+                <td>Webhook / HTTP Payload</td>
                 <td>标准 <code>MessageEnvelope</code></td>
-                <td>渠道签名验证、消息去重幂等、用户跨渠道绑定，不参与业务逻辑</td>
+                <td>渠道签名验证、消息幂等去重、账号映射，不承载任何业务逻辑</td>
               </tr>
               <tr>
-                <td><strong>安全网关层</strong></td>
+                <td><strong>前置网关层</strong></td>
                 <td><code>jev_gateway.py</code></td>
                 <td>纯文本消息内容</td>
-                <td>语言识别、意图标签、越狱判定</td>
-                <td>耗时 &lt; 1ms，拦截恶意输入与敏感词，无状态高并发执行</td>
+                <td>语种、意图、越狱标签</td>
+                <td>执行耗时 &lt; 1ms，拦截恶意注入与粗暴辱骂，无状态高并发执行</td>
               </tr>
               <tr>
                 <td><strong>事实与知识层</strong></td>
                 <td><code>mock_billing.py</code><br><code>rag_engine.py</code></td>
                 <td>用户 ID、订单号、意图</td>
-                <td>流水差额、资产快照、SOP规则</td>
-                <td>只读 CQRS 直连，绝不执行写事务，暴露 <code>as_of</code> 新鲜度时间戳</td>
+                <td>流水差额、资产快照、SOP</td>
+                <td>直连 CQRS 只读副本，绝不执行写事务，暴露 <code>as_of</code> 时间戳</td>
               </tr>
               <tr>
                 <td><strong>裁决与调度层</strong></td>
                 <td><code>risk_engine.py</code><br><code>acd_routing_engine.py</code></td>
-                <td>事实快照、情绪指数、系统模式</td>
-                <td>执行模式、分配坐席、诊断卡</td>
-                <td>分级放行门禁，若流水不足坚决阻断直答；ACD 技能组负荷均衡</td>
+                <td>事实快照、情绪指数、模式</td>
+                <td>执行策略、分配坐席、诊断卡</td>
+                <td>分级放行门禁，若流水存在缺口坚决阻断直答；ACD 技能组负荷分配</td>
               </tr>
               <tr>
                 <td><strong>执行与动作中台</strong></td>
                 <td><code>action_agent.py</code><br><code>ticket_service.py</code></td>
-                <td>业务操作指令、操作人身份</td>
-                <td>资金补账、打码量冲正、工单流转</td>
-                <td>受控操作，单笔 &le; 2,000 免审，大额自动建单，全量审计流落库</td>
+                <td>业务操作指令、操作人</td>
+                <td>补单流水号、冲正状态、工单</td>
+                <td>受控操作，单笔 &le; 2,000 元免审，超额自动建单，全量审计流留痕</td>
               </tr>
               <tr>
                 <td><strong>出口质检层</strong></td>
@@ -840,28 +878,28 @@ graph TD
               <tr>
                 <td><strong>质量与演进层</strong></td>
                 <td><code>qa_analytics_engine.py</code><br><code>knowledge_flywheel.py</code></td>
-                <td>完整会话轨迹、坐席编辑 Diff</td>
-                <td>五维质检分、候选规则、影子评测报告</td>
-                <td>会话落库即打分，优质修改自动提取沉淀入 RAG 知识库</td>
+                <td>完整会话轨迹、编辑 Diff</td>
+                <td>五维质检分、候选规则、沙箱报告</td>
+                <td>会话落库即打分，优质修改自动提炼并沉淀入 RAG 向量规则库</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Section 4: Phase 1 Deep-Dive -->
+      <!-- 第 4 章: Phase 1 详细设计 -->
       <section class="doc-section" id="phase1">
-        <h2 class="section-title"><span class="title-num">04</span> Phase 1 详细设计: Copilot 辅助化与安全底座</h2>
+        <h2 class="section-heading"><span class="sec-num">04</span> Phase 1 详细设计: Copilot 辅助化与 CQRS 只读直连</h2>
         
-        <h3 class="sub-title">4.1 毫秒级多语言识别与越狱拦截</h3>
+        <h3 class="sub-heading">4.1 毫秒级多语言识别与越狱拦截</h3>
         <p>
           在 <code>jev_gateway.py</code> 中，前置识别引擎结合轻量正则与字符集特征，在零外部网络调用损耗下实现高精度判定：
         </p>
 
-        <div class="code-wrapper">
-          <div class="code-header">
+        <div class="code-panel">
+          <div class="code-panel-header">
             <span>app/services/jev_gateway.py (多语言快速探测核心)</span>
-            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+            <button class="btn-copy" onclick="copyCode(this)">复制代码</button>
           </div>
           <pre><code>def detect_language(self, text: str) -> str:
     # 泰文字符范围 (Thai Unicode Block)
@@ -871,13 +909,13 @@ graph TD
     if re.search(r"[\u4e00-\u9fa5]", text):
         return "zh"
     # 越南文特征声调字符 (Vietnamese tone marks)
-    if re.search(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", text, re.IGNORECASE):
+    if re.search(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúũụưừứửữựỳýỷỹỵđ]", text, re.IGNORECASE):
         return "vi"
     # 默认判定为英语
     return "en"</code></pre>
         </div>
 
-        <h3 class="sub-title">4.2 CQRS 账务只读直连架构</h3>
+        <h3 class="sub-heading">4.2 CQRS 账务只读直连架构</h3>
         <p>
           针对提现流水、打码量对账等高频压力，系统与交易主库严格实施物理级读写分离：
         </p>
@@ -886,23 +924,23 @@ graph TD
         </div>
       </section>
 
-      <!-- Section 5: Phase 2 Deep-Dive -->
+      <!-- 第 5 章: Phase 2 详细设计 -->
       <section class="doc-section" id="phase2">
-        <h2 class="section-title"><span class="title-num">05</span> Phase 2 详细设计: Auto-Pilot 自动驾驶、危机雷达与工单 Hub</h2>
+        <h2 class="section-heading"><span class="sec-num">05</span> Phase 2 详细设计: 动态风险门禁与工单全生命周期</h2>
 
-        <!-- Interactive Tabs for P2 -->
-        <div class="tabs-header">
-          <button class="tab-btn active" onclick="switchTab(this, 'p2-gating')">🛡️ 分级放行门禁 (Gating Engine)</button>
-          <button class="tab-btn" onclick="switchTab(this, 'p2-sentiment')">🔥 客诉危机雷达 (Sentiment Radar)</button>
-          <button class="tab-btn" onclick="switchTab(this, 'p2-ticket')">🎫 工单生命周期 (TicketHub)</button>
+        <!-- 标准轻量切换标签 -->
+        <div class="nav-tabs">
+          <button class="tab-item active" onclick="switchTab(this, 'p2-gating')">分级放行门禁 (Gating Engine)</button>
+          <button class="tab-item" onclick="switchTab(this, 'p2-sentiment')">客诉危机雷达 (Sentiment Radar)</button>
+          <button class="tab-item" onclick="switchTab(this, 'p2-ticket')">工单生命周期 (TicketHub)</button>
         </div>
 
-        <div class="tab-pane active" id="p2-gating">
+        <div class="tab-content active" id="p2-gating">
           <p>
             即使系统全局处于 <code>auto_pilot</code> 自主应答模式，<code>RiskDecisionEngine</code> 依然对每一次进线进行逐笔准入裁决：
           </p>
-          <div class="table-container">
-            <table>
+          <div class="table-responsive">
+            <table class="spec-table">
               <thead>
                 <tr>
                   <th>风险级别</th>
@@ -913,25 +951,25 @@ graph TD
               </thead>
               <tbody>
                 <tr>
-                  <td><code>CRITICAL</code></td>
+                  <td><span class="badge badge-danger">CRITICAL</span></td>
                   <td>命中 Prompt 注入、黑灰产刷单特征</td>
                   <td>❌ 绝对阻断</td>
                   <td>阻断交互，记录安全日志，不触发回复</td>
                 </tr>
                 <tr>
-                  <td><code>HIGH</code></td>
+                  <td><span class="badge badge-danger">HIGH</span></td>
                   <td>打码量欠额 &gt; 0、提现订单卡单审核、P0 愤怒危机</td>
                   <td>❌ 强制降级</td>
                   <td>转为 Copilot 草稿，弹出根因诊断卡，自动建单</td>
                 </tr>
                 <tr>
-                  <td><code>MEDIUM</code></td>
+                  <td><span class="badge badge-warn">MEDIUM</span></td>
                   <td>P1 催单焦虑情绪、首次充值超时咨询</td>
                   <td>❌ 降级人工</td>
                   <td>生成结构化坐席指引，坐席一键微调</td>
                 </tr>
                 <tr>
-                  <td><code>LOW</code></td>
+                  <td><span class="badge badge-success">LOW</span></td>
                   <td>标准规则咨询 (FAQ)、充值已到账确认、情绪平和</td>
                   <td>✅ 闪电直答</td>
                   <td>Auto-Pilot 直接回发，附带抢单接管标记</td>
@@ -941,19 +979,17 @@ graph TD
           </div>
         </div>
 
-        <div class="tab-pane" id="p2-sentiment">
-          <p>
-            多语言情绪雷达实时计算四国语境下的情感倾向指数与紧急度：
-          </p>
+        <div class="tab-content" id="p2-sentiment">
+          <p>多语言情绪雷达实时计算四国语境下的情感倾向指数与紧急度：</p>
           <ul>
-            <li><code>P0_CRITICAL</code>：包含“骗子平台”、“报警举报”、“退钱”、“lừa đảo”、“โกง”等维权词汇，触发系统级红色呼吸告警。</li>
+            <li><code>P0_CRITICAL</code>：包含“骗子平台”、“报警举报”、“退钱”、“lừa đảo”、“โกง”等维权词汇，触发系统级红色警报。</li>
             <li><code>P1_URGENT</code>：包含“快点到账”、“急用”、“催一下”，提示坐席优先响应。</li>
             <li><code>P2_NORMAL</code>：常规平和或积极互动，进入标准处理队列。</li>
           </ul>
         </div>
 
-        <div class="tab-pane" id="p2-ticket">
-          <div class="diagram-container">
+        <div class="tab-content" id="p2-ticket">
+          <div class="diagram-box">
             <div class="mermaid">
 stateDiagram-v2
     [*] --> PENDING_REVIEW: 自动建单或坐席手工建单
@@ -964,19 +1000,19 @@ stateDiagram-v2
     PAYOUT_APPROVED --> RESOLVED: 出款成功并自动发放关怀券
     RESOLVED --> [*]: 归档留痕
             </div>
-            <div class="diagram-caption">图 2: TicketHub 工单生命周期状态机模型</div>
+            <div class="diagram-caption">图 5.1: TicketHub 工单生命周期状态机模型</div>
           </div>
         </div>
       </section>
 
-      <!-- Section 6: Phase 3 Deep-Dive -->
+      <!-- 第 6 章: Phase 3 详细设计 -->
       <section class="doc-section" id="phase3">
-        <h2 class="section-title"><span class="title-num">06</span> Phase 3 详细设计: Action Agent 自主执行中台</h2>
+        <h2 class="section-heading"><span class="sec-num">06</span> Phase 3 详细设计: Action Agent 业务闭环执行中台</h2>
         <p>
-          Action Agent 将客服系统从“信息查询”跃迁至“闭环处置”。包含四大原子能力：
+          Action Agent 将客服系统从“信息查询”跃迁至“闭环处置”。四大原子能力如下：
         </p>
 
-        <div class="diagram-container">
+        <div class="diagram-box">
           <div class="mermaid">
 sequenceDiagram
     autonumber
@@ -999,23 +1035,23 @@ sequenceDiagram
         AA-->>User: 触发财务对账加急工单，进入人工审核通道
     end
           </div>
-          <div class="diagram-caption">图 3: Action Agent 小额充值掉单补单闭环时序图</div>
+          <div class="diagram-caption">图 6.1: Action Agent 小额充值掉单免审补单时序图</div>
         </div>
 
-        <div class="table-container">
-          <table>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
                 <th>操作函数</th>
                 <th>触发门禁与业务边界</th>
-                <th>核心参数</th>
-                <th>安全回退机制</th>
+                <th>核心入参</th>
+                <th>安全回退与兜底机制</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><code>reconcile_and_credit_deposit</code></td>
-                <td>单笔额度 &le; 2,000 元，链上哈希核验确认有效</td>
+                <td>单笔额度 &le; 2,000 元，链上哈希核验真实有效</td>
                 <td><code>user_id</code>, <code>order_id</code>, <code>tx_hash</code></td>
                 <td>额度超标时自动降级转财务工单</td>
               </tr>
@@ -1029,7 +1065,7 @@ sequenceDiagram
                 <td><code>dispatch_vip_retention_care</code></td>
                 <td>客诉危机触发，根据会员等级阶梯式自动派发体验礼金</td>
                 <td><code>user_id</code>, <code>urgency</code>, <code>custom_amount</code></td>
-                <td>单日单用户派发次数设硬顶，防羊毛套利</td>
+                <td>单日单用户派发次数设硬顶，防刷套利</td>
               </tr>
               <tr>
                 <td><code>check_anti_fraud_risk</code></td>
@@ -1042,21 +1078,21 @@ sequenceDiagram
         </div>
       </section>
 
-      <!-- Section 7: Phase 4 Deep-Dive -->
+      <!-- 第 7 章: Phase 4 详细设计 -->
       <section class="doc-section" id="phase4">
-        <h2 class="section-title"><span class="title-num">07</span> Phase 4 详细设计: 全量会话智能质检 (Auto QA) 与运营 BI</h2>
+        <h2 class="section-heading"><span class="sec-num">07</span> Phase 4 详细设计: 全量会话智能质检 (Auto QA) 与运营 BI</h2>
         <p>
           系统实现 100% 全量会话五维自动质检打分（满分 100 分）：
         </p>
 
-        <div class="table-container">
-          <table>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
-                <th>打分维度</th>
+                <th>质检考评维度</th>
                 <th>满分</th>
-                <th>质检规则与考评要点</th>
-                <th>扣分违规触发项</th>
+                <th>核心判定逻辑与考评标准</th>
+                <th>违规扣分触发规则</th>
               </tr>
             </thead>
             <tbody>
@@ -1095,14 +1131,14 @@ sequenceDiagram
         </div>
       </section>
 
-      <!-- Section 8: Phase 5 Deep-Dive -->
+      <!-- 第 8 章: Phase 5 详细设计 -->
       <section class="doc-section" id="phase5">
-        <h2 class="section-title"><span class="title-num">08</span> Phase 5 详细设计: 自学习知识蒸馏飞轮与影子评测沙箱</h2>
+        <h2 class="section-heading"><span class="sec-num">08</span> Phase 5 详细设计: 自学习知识蒸馏飞轮与影子沙箱</h2>
         <p>
           打破传统客服“模型归模型，人工归人工”的割裂，建立正向数据反馈循环：
         </p>
 
-        <div class="diagram-container">
+        <div class="diagram-box">
           <div class="mermaid">
 graph LR
     Draft["AI 初始草稿"] --> AgentEdit["🧑‍💼 坐席手工修改并发送"]
@@ -1112,17 +1148,13 @@ graph LR
     Review -->|采纳注入| RAG["📚 秒级热加载入 RAG 向量规则库"]
     Review -->|离线回放| Sandbox["🧪 影子评测沙箱 (Dual-Run 对比)"]
           </div>
-          <div class="diagram-caption">图 4: Phase 5 知识蒸馏飞轮与模型演进循环</div>
+          <div class="diagram-caption">图 8.1: Phase 5 知识蒸馏飞轮与模型演进循环</div>
         </div>
-
-        <p>
-          在影子评测沙箱中，候选模型与生产基线模型并发执行 Dual-Run 离线回放，生成评估报告包含平均时延对比、JEV 合规率与质检置信度，达标后方可一键上线。
-        </p>
       </section>
 
-      <!-- Section 9: Omnichannel IM Gateway -->
+      <!-- 第 9 章: 全渠道 IM 网关 -->
       <section class="doc-section" id="omnichannel">
-        <h2 class="section-title"><span class="title-num">09</span> IM 全渠道接入网关 (Telegram / WhatsApp / LINE / Web)</h2>
+        <h2 class="section-heading"><span class="sec-num">09</span> IM 全渠道接入网关 (Telegram / WhatsApp / LINE / Web)</h2>
         <p>
           <code>IMChannelGateway</code> 提供统一的协议归一化与出站消息分流服务：
         </p>
@@ -1134,9 +1166,9 @@ graph LR
         </ul>
       </section>
 
-      <!-- Section 10: Collaboration -->
+      <!-- 第 10 章: ACD 调度与协同 -->
       <section class="doc-section" id="collaboration">
-        <h2 class="section-title"><span class="title-num">10</span> ACD 智能排队调度与班长席监控协同</h2>
+        <h2 class="section-heading"><span class="sec-num">10</span> ACD 智能排队调度与班长席监控协同</h2>
         <p>
           针对企业级服务运营，中台集成了三大协同引擎：
         </p>
@@ -1147,17 +1179,15 @@ graph LR
         </ol>
       </section>
 
-      <!-- Section 11: API Contracts -->
+      <!-- 第 11 章: API 契约 -->
       <section class="doc-section" id="api-contracts">
-        <h2 class="section-title"><span class="title-num">11</span> 核心 API 与消息信封契约</h2>
-        <p>
-          所有跨渠道消息在进入编排中枢前，统一封装为标准 <code>MessageEnvelope</code>：
-        </p>
+        <h2 class="section-heading"><span class="sec-num">11</span> 核心 API 与消息信封契约</h2>
+        <p>所有跨渠道消息在进入编排中枢前，统一封装为标准 <code>MessageEnvelope</code>：</p>
 
-        <div class="code-wrapper">
-          <div class="code-header">
+        <div class="code-panel">
+          <div class="code-panel-header">
             <span>JSON 契约: MessageEnvelope 标准消息信封</span>
-            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+            <button class="btn-copy" onclick="copyCode(this)">复制代码</button>
           </div>
           <pre><code>{
   "trace_id": "tr_20261016_881920",
@@ -1171,9 +1201,9 @@ graph LR
 }</code></pre>
         </div>
 
-        <h3 class="sub-title">11.1 核心 RESTful 端点清单</h3>
-        <div class="table-container">
-          <table>
+        <h3 class="sub-heading">11.1 核心 RESTful 端点清单</h3>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
                 <th>方法</th>
@@ -1254,9 +1284,9 @@ graph LR
         </div>
       </section>
 
-      <!-- Section 12: Security & HA -->
+      <!-- 第 12 章: 10W TPS 隔离与零资损 -->
       <section class="doc-section" id="security-ha">
-        <h2 class="section-title"><span class="title-num">12</span> 10W TPS 隔离与零资损防护保障</h2>
+        <h2 class="section-heading"><span class="sec-num">12</span> 10W TPS 隔离与零资损防护保障</h2>
         <div class="callout callout-info">
           <strong>资金与权限三大铁律：</strong>
           <ol>
@@ -1267,10 +1297,10 @@ graph LR
         </div>
       </section>
 
-      <!-- Section 13: Deployment -->
+      <!-- 第 13 章: 部署拓扑 -->
       <section class="doc-section" id="deployment">
-        <h2 class="section-title"><span class="title-num">13</span> 生产集群拓扑与资源配置</h2>
-        <div class="diagram-container">
+        <h2 class="section-heading"><span class="sec-num">13</span> 生产集群拓扑与资源配置</h2>
+        <div class="diagram-box">
           <div class="mermaid">
 graph TD
     User["公网用户 / 坐席 / Webhook"] --> SLB["云负载均衡 SLB (443 SSL 卸载)"]
@@ -1286,11 +1316,11 @@ graph TD
         CoreApp --> LLM["vLLM / SGLang 推理专区 (或 DeepSeek 专线)"]
     end
           </div>
-          <div class="diagram-caption">图 5: CoreDesk 生产高可用网络与集群拓扑</div>
+          <div class="diagram-caption">图 13.1: CoreDesk 生产高可用网络与集群拓扑</div>
         </div>
 
-        <div class="table-container">
-          <table>
+        <div class="table-responsive">
+          <table class="spec-table">
             <thead>
               <tr>
                 <th>节点类别</th>
@@ -1333,29 +1363,21 @@ graph TD
   </div>
 
   <script>
-    // 初始化 Mermaid
+    // 初始化 Mermaid 为干净严谨的技术蓝图风格 (neutral)
     mermaid.initialize({
       startOnLoad: true,
-      theme: 'dark',
+      theme: 'neutral',
       securityLevel: 'loose',
       fontFamily: 'Inter, sans-serif'
     });
 
-    // 阅读进度条监听
-    window.addEventListener('scroll', () => {
-      const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
-      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      const scrolled = (winScroll / height) * 100;
-      document.getElementById('progressBar').style.width = scrolled + '%';
-    });
-
     // 侧边栏平滑高亮监听
     const sections = document.querySelectorAll('section.doc-section');
-    const navLinks = document.querySelectorAll('.nav-link');
+    const navLinks = document.querySelectorAll('.toc-link');
     window.addEventListener('scroll', () => {
       let current = '';
       sections.forEach(section => {
-        const sectionTop = section.offsetTop - 120;
+        const sectionTop = section.offsetTop - 80;
         if (pageYOffset >= sectionTop) {
           current = section.getAttribute('id');
         }
@@ -1374,50 +1396,46 @@ graph TD
       navLinks.forEach(link => {
         const text = link.textContent.toLowerCase();
         if (text.includes(val)) {
-          link.style.display = 'flex';
+          link.style.display = 'block';
         } else {
           link.style.display = 'none';
         }
       });
     });
 
-    // 暗色 / 明亮主题切换
+    // 严谨工程明暗模式切换
     const themeBtn = document.getElementById('themeToggleBtn');
-    const themeIcon = document.getElementById('themeIcon');
-    let isDark = true;
+    const themeLabel = document.getElementById('themeLabel');
+    let isDark = false;
     themeBtn.addEventListener('click', () => {
       isDark = !isDark;
       if (isDark) {
-        document.documentElement.removeAttribute('data-theme');
-        themeIcon.textContent = '☀️';
+        document.documentElement.setAttribute('data-theme', 'dark');
+        themeLabel.textContent = '暗色模式';
       } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        themeIcon.textContent = '🌙';
+        document.documentElement.removeAttribute('data-theme');
+        themeLabel.textContent = '明亮模式';
       }
     });
 
     // 标签页切换逻辑
     function switchTab(btn, paneId) {
       const container = btn.closest('section');
-      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      container.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      container.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.tab-content').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(paneId).classList.add('active');
     }
 
     // 代码复制逻辑
     function copyCode(btn) {
-      const pre = btn.closest('.code-wrapper').querySelector('pre');
+      const pre = btn.closest('.code-panel').querySelector('pre');
       navigator.clipboard.writeText(pre.innerText).then(() => {
         const origText = btn.textContent;
-        btn.textContent = '已复制 ✓';
-        btn.style.borderColor = 'var(--accent-emerald)';
-        btn.style.color = 'var(--accent-emerald)';
+        btn.textContent = '已复制';
         setTimeout(() => {
           btn.textContent = origText;
-          btn.style.borderColor = '';
-          btn.style.color = '';
-        }, 1800);
+        }, 1500);
       });
     }
   </script>

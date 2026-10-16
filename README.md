@@ -169,9 +169,10 @@ graph TD
 
 ## 🚀 启动与服务器部署
 
-详细部署操作与系统使用手册请参阅：
-- 🌐 **[在线交互式 HTML 手册：CoreDesk_Deploy_and_User_Manual.html](file:///Users/king/Documents/AIWorkSpace/Ai-customer/CoreDesk_Deploy_and_User_Manual.html)** (支持一键复制代码、侧边栏导航、打印导出 PDF，或系统启动后直接访问 `http://localhost:8000/manual`)
-- 📄 **[Markdown 完整版手册：DEPLOY_AND_USER_GUIDE.md](file:///Users/king/Documents/AIWorkSpace/Ai-customer/DEPLOY_AND_USER_GUIDE.md)**
+详细设计与系统使用手册请参阅：
+- 🏛️ **[系统设计与架构白皮书 HTML：CoreDesk_Architecture_and_Design_Specification.html](file:///Users/king/Documents/AIWorkSpace/Ai-customer/CoreDesk_Architecture_and_Design_Specification.html)** (支持 Mermaid 拓扑渲染、分阶段 Tabs、代码一键复制、明暗主题切换，或系统启动后访问 `http://localhost:8000/architecture`)
+- 🌐 **[在线交互式运维与操作手册 HTML：CoreDesk_Deploy_and_User_Manual.html](file:///Users/king/Documents/AIWorkSpace/Ai-customer/CoreDesk_Deploy_and_User_Manual.html)** (支持一键复制代码、侧边栏导航、打印导出 PDF，或系统启动后直接访问 `http://localhost:8000/manual`)
+- 📄 **[Markdown 完整版部署手册：DEPLOY_AND_USER_GUIDE.md](file:///Users/king/Documents/AIWorkSpace/Ai-customer/DEPLOY_AND_USER_GUIDE.md)**
 
 
 ### 方式 1: 本地/单机开发快速体验
