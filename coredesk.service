@@ -1,0 +1,19 @@
+[Unit]
+Description=CoreDesk AI Customer Service Backend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# 请将 WorkingDirectory 和 ExecStart 修改为您在服务器上的实际代码路径与虚拟环境路径
+WorkingDirectory=/opt/coredesk
+ExecStart=/opt/coredesk/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
+Restart=always
+RestartSec=5
+Environment="PATH=/opt/coredesk/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="HOST=0.0.0.0"
+Environment="PORT=8000"
+Environment="RELOAD=false"
+
+[Install]
+WantedBy=multi-user.target

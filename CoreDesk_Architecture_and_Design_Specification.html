@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智服云 CoreDesk · 全渠道智能客服中台系统设计与总体架构白皮书 (V3.0)</title>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Mermaid.js for Interactive Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-sub: #0f172a;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-hover: rgba(56, 189, 248, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      
+      --accent-cyan: #06b6d4;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --accent-purple: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      
+      --code-bg: #0b1120;
+      --code-border: #1e293b;
+      --sidebar-w: 290px;
+      --header-h: 64px;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-sub: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-border: rgba(15, 23, 42, 0.08);
+      --card-border-hover: rgba(2, 132, 199, 0.4);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-sub: #64748b;
+      --code-bg: #f1f5f9;
+      --code-border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.7;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    /* 顶部进度条与导航 */
+    .progress-bar-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: transparent;
+      z-index: 1000;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo), var(--accent-purple));
+      transition: width 0.1s linear;
+    }
+
+    header.top-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      z-index: 900;
+    }
+    [data-theme="light"] header.top-header {
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+    }
+    .brand-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(6, 182, 212, 0.12);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-icon {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-icon:hover {
+      color: var(--text-main);
+      border-color: var(--card-border-hover);
+      transform: translateY(-1px);
+    }
+
+    /* 布局容器 */
+    .layout-wrapper {
+      display: flex;
+      margin-top: var(--header-h);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* 侧边导航栏 */
+    aside.sidebar {
+      width: var(--sidebar-w);
+      position: fixed;
+      top: var(--header-h);
+      bottom: 0;
+      left: 0;
+      background: var(--bg-sub);
+      border-right: 1px solid var(--card-border);
+      overflow-y: auto;
+      padding: 24px 16px;
+      z-index: 800;
+    }
+    .sidebar-search {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .sidebar-search input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 12px 8px 32px;
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sidebar-search input:focus {
+      border-color: var(--accent-cyan);
+    }
+    .sidebar-search svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+      width: 14px;
+      height: 14px;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-sub);
+      margin: 18px 8px 8px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      margin-bottom: 2px;
+    }
+    .nav-link:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    [data-theme="light"] .nav-link:hover {
+      background: rgba(0, 0, 0, 0.04);
+    }
+    .nav-link.active {
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.1);
+      font-weight: 600;
+      border-left: 2px solid var(--accent-cyan);
+    }
+
+    /* 主内容区 */
+    main.content-area {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 40px 60px 100px;
+      max-width: 1200px;
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.15), transparent 45%),
+                  radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.12), transparent 45%),
+                  var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 36px 40px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
+    }
+    .hero-banner h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff 40%, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    [data-theme="light"] .hero-banner h1 {
+      background: linear-gradient(135deg, #0f172a 40%, #475569);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-banner p.lead {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 860px;
+      margin-bottom: 24px;
+    }
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+    .status-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    /* KPI 卡片网格 */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.2s ease;
+    }
+    .kpi-card:hover {
+      border-color: var(--card-border-hover);
+      transform: translateY(-2px);
+    }
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.04em;
+    }
+    .kpi-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* 章节容器与标题 */
+    section.doc-section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 36px;
+      margin-bottom: 36px;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.15);
+    }
+    h2.section-title {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .title-num {
+      color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+    h3.sub-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 28px 0 12px;
+    }
+    p { margin-bottom: 14px; color: var(--text-muted); }
+
+    /* Mermaid 渲染容器 */
+    .diagram-container {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 20px 0;
+      overflow-x: auto;
+      text-align: center;
+    }
+    .diagram-caption {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 10px;
+      font-style: italic;
+    }
+
+    /* 标签页组件 (Tabs) */
+    .tabs-header {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+    .tab-btn.active {
+      color: var(--accent-cyan);
+      border-bottom-color: var(--accent-cyan);
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 表格 */
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-main);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+    [data-theme="light"] th {
+      background: #f1f5f9;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--card-border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    [data-theme="light"] tr:hover td {
+      background: #f8fafc;
+    }
+
+    /* 代码块与高亮 */
+    .code-wrapper {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 10px;
+      margin: 16px 0;
+      overflow: hidden;
+    }
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--code-border);
+      font-size: 12px;
+      color: var(--text-sub);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--code-border);
+      color: var(--text-sub);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover {
+      color: var(--text-main);
+      border-color: var(--accent-cyan);
+    }
+    pre {
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    [data-theme="light"] pre {
+      color: #1e293b;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+    [data-theme="light"] code {
+      background: #e2e8f0;
+      color: #0369a1;
+    }
+
+    /* Callout 提示框 */
+    .callout {
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin: 18px 0;
+      border-left: 4px solid;
+      font-size: 13.5px;
+    }
+    .callout-info {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: var(--accent-cyan);
+      color: var(--text-main);
+    }
+    .callout-warn {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: var(--accent-amber);
+      color: var(--text-main);
+    }
+    .callout-danger {
+      background: rgba(244, 63, 94, 0.08);
+      border-color: var(--accent-rose);
+      color: var(--text-main);
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 1024px) {
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      main.content-area { padding: 30px; }
+    }
+    @media (max-width: 768px) {
+      aside.sidebar { transform: translateX(-100%); transition: transform 0.25s; }
+      aside.sidebar.open { transform: translateX(0); }
+      main.content-area { margin-left: 0; padding: 20px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 打印样式 */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      header.top-header, aside.sidebar, .btn-icon, .copy-btn { display: none !important; }
+      main.content-area { margin-left: 0 !important; padding: 0 !important; max-width: 100% !important; }
+      section.doc-section { border: 1px solid #ddd !important; box-shadow: none !important; page-break-inside: avoid; }
+      pre, code { background: #f5f5f5 !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部阅读进度条 -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- 顶部导航栏 -->
+  <header class="top-header">
+    <div class="brand">
+      <div class="brand-logo">C</div>
+      <div>智服云 CoreDesk <span style="font-size:12px; font-weight:400; color:var(--text-sub)">· Architecture Spec</span></div>
+      <span class="brand-tag">V3.0 Enterprise</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="themeToggleBtn" title="切换暗色/明亮模式">
+        <span id="themeIcon">☀️</span> 模式
+      </button>
+      <button class="btn-icon" onclick="window.print()" title="打印或保存为 PDF">
+        🖨️ 导出 PDF
+      </button>
+    </div>
+  </header>
+
+  <div class="layout-wrapper">
+    <!-- 侧边导航栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-search">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="navFilter" placeholder="搜索架构模块或接口...">
+      </div>
+
+      <nav id="navMenu">
+        <div class="nav-group-title">架构概览</div>
+        <a href="#overview" class="nav-link active"><span>01</span> 系统背景与核心指标</a>
+        <a href="#topology" class="nav-link"><span>02</span> 总体拓扑与双引擎</a>
+        <a href="#layers" class="nav-link"><span>03</span> 逻辑分层与职责边界</a>
+
+        <div class="nav-group-title">阶段深度设计</div>
+        <a href="#phase1" class="nav-link"><span>04</span> P1: JEV网关与CQRS直连</a>
+        <a href="#phase2" class="nav-link"><span>05</span> P2: Auto-Pilot与工单Hub</a>
+        <a href="#phase3" class="nav-link"><span>06</span> P3: Action Agent执行中台</a>
+        <a href="#phase4" class="nav-link"><span>07</span> P4: 全量质检与运营BI</a>
+        <a href="#phase5" class="nav-link"><span>08</span> P5: 知识飞轮与影子沙箱</a>
+
+        <div class="nav-group-title">协同与接入</div>
+        <a href="#omnichannel" class="nav-link"><span>09</span> IM全渠道网关 (TG/WA/LINE)</a>
+        <a href="#collaboration" class="nav-link"><span>10</span> ACD调度与班长席密语</a>
+
+        <div class="nav-group-title">契约与规范</div>
+        <a href="#api-contracts" class="nav-link"><span>11</span> 核心API与消息信封契约</a>
+        <a href="#security-ha" class="nav-link"><span>12</span> 10W TPS 隔离与零资损</a>
+        <a href="#deployment" class="nav-link"><span>13</span> 生产集群拓扑与资源配置</a>
+      </nav>
+    </aside>
+
+    <!-- 主文档内容区 -->
+    <main class="content-area">
+
+      <!-- Hero Header -->
+      <div class="hero-banner">
+        <h1>智服云 CoreDesk · 全渠道智能客服中台<br>总体系统设计与架构白皮书</h1>
+        <p class="lead">
+          基于“JEV 毫秒级决策引擎 × LLM 事实翻译生成引擎 × 确定性业务规则控制”的三元解耦架构，达成从 P1 辅助草稿、P2 分级自主应答、P3 动作闭环、P4 全量质检到 P5 知识自学习飞轮的全生命周期工业级落地。
+        </p>
+        <div class="hero-badges">
+          <span class="pill"><span class="status-pulse"></span> 生产基准 V3.0 已归档</span>
+          <span class="pill">⏱️ 前置安全决策 &lt; 1ms</span>
+          <span class="pill">⚡ Auto-Pilot 闪电闭环 &lt; 50ms</span>
+          <span class="pill">💳 账务中台 CQRS 10W TPS 零锁只读</span>
+          <span class="pill">🌐 中 / 英 / 越 / 泰 四国母语支持</span>
+        </div>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Auto-Pilot 自主解决率</div>
+          <div class="kpi-value" style="color:var(--accent-cyan)">78.6%</div>
+          <div class="kpi-desc">标准 FAQ 与常规账务秒级直答</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">决策平均耗时 (JEV)</div>
+          <div class="kpi-value" style="color:var(--accent-emerald)">0.42 ms</div>
+          <div class="kpi-desc">毫秒级防注入/越狱/意图识别</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">全量会话质检覆盖</div>
+          <div class="kpi-value" style="color:var(--accent-indigo)">100%</div>
+          <div class="kpi-desc">会话结束即触发五维智能打分</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">多渠道接入能力</div>
+          <div class="kpi-value" style="color:var(--accent-purple)">4 Channels</div>
+          <div class="kpi-desc">Telegram / WhatsApp / LINE / Web</div>
+        </div>
+      </div>
+
+      <!-- Section 1: Overview -->
+      <section class="doc-section" id="overview">
+        <h2 class="section-title"><span class="title-num">01</span> 系统背景与核心建设指标</h2>
+        <p>
+          在跨境金融、互动娱乐及高频业务出入金场景下，客服系统承载着大额资金咨询（充提、打码量、流水对账）与敏感客诉的高压冲击。传统方案常因<strong>大模型数字幻觉引发超额承诺</strong>、<strong>高并发查询拖垮核心账务数据库</strong>，以及<strong>客诉危机响应迟钝</strong>导致严重业务事故。
+        </p>
+
+        <div class="callout callout-info">
+          <strong>CoreDesk 核心设计铁律：</strong>
+          大模型仅担任“事实翻译官与多语言表达器”，绝不允许由概率模型推断或自行编造任何金额、打码量缺口或出款承诺。所有权威数据均来自业务只读网关。
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>目标维度</th>
+                <th>传统智能客服现状</th>
+                <th>CoreDesk 工业级落地标准</th>
+                <th>达成衡量机制</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>资金安全防线</strong></td>
+                <td>单体 LLM 直接回答，频发虚假承诺</td>
+                <td><strong>确定性规则 + 只读代理 + 发送前脱敏质检</strong></td>
+                <td>违规包赔承诺 100% 拦截并审计</td>
+              </tr>
+              <tr>
+                <td><strong>高并发账务性能</strong></td>
+                <td>直查主业务库，引发行锁与死锁</td>
+                <td><strong>10W TPS CQRS 只读投影镜像</strong></td>
+                <td>压测下核心写事务零干扰，P99 &lt; 15ms</td>
+              </tr>
+              <tr>
+                <td><strong>服务时效 (SLA)</strong></td>
+                <td>大模型首字生成 2~5 秒，排队阻塞</td>
+                <td><strong>JEV 决策 &lt; 1ms，Auto-Pilot &lt; 50ms</strong></td>
+                <td>分级放行门禁，低风险无需等 LLM 生成</td>
+              </tr>
+              <tr>
+                <td><strong>多渠道与协同</strong></td>
+                <td>各平台孤立，人工与机器人抢话脱节</td>
+                <td><strong>统一 IM 网关 + ACD 技能组 + 班长席密语</strong></td>
+                <td>双向无损热切换，强插接管无缝协同</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 2: Full Topology -->
+      <section class="doc-section" id="topology">
+        <h2 class="section-title"><span class="title-num">02</span> 总体架构拓扑与双引擎解耦</h2>
+        <p>
+          系统采用解耦的“双引擎驱动（Dual-Engine Paradigm）”：<strong>System 1</strong> 负责毫秒级快速研判、语言分类与安全防线；<strong>System 2</strong> 负责受控自然语言多语言表达；中间由<strong>确定性业务控制网关</strong>构筑防线。
+        </p>
+
+        <div class="diagram-container">
+          <div class="mermaid">
+graph TD
+    Client["🌐 客户端接入 / 多语言会员 (ZH/EN/VI/TH)"] --> JEV_Gate["⚡ JEV 前置安全网关 (<1ms 路由/防注入/鉴权)"]
+    JEV_Gate --> Sentiment["🔥 情感与客诉危机研判 (P0/P1/P2 雷达)"]
+    Sentiment --> CQRS["💼 账务中台 CQRS 只读直连 (零阻塞/流水差额计算)"]
+    CQRS --> RAG["📚 多语言 RAG 向量规则库 (充提/打码/返水/合规规则)"]
+    RAG --> RiskEngine["🛡️ 动态风险裁决与分流引擎 (Risk & Action Gate)"]
+    
+    RiskEngine -->|低风险/高置信/无流水缺口| AutoPilot["🤖 Auto-Pilot 自主直答 (<50ms 闪电闭环)"]
+    RiskEngine -->|中高风险/流水缺口/负向情绪| Copilot["🧑‍💼 Copilot 坐席辅助草稿 + 诊断卡预警"]
+    RiskEngine -->|P0 客诉危机/重大异常| TicketHub["🎫 自动建单排查 + 运营工单生命周期 Hub"]
+    
+    Copilot --> ActionAgent["⚡ Phase 3: Action Agent 自主执行中台"]
+    AutoPilot --> ActionAgent
+    
+    ActionAgent --> Reconcile["💳 小额充值掉单自动核验补单 (<=¥2,000免审)"]
+    ActionAgent --> TurnoverWaiver["📉 扣除红利优惠/提现流水冲正放行"]
+    ActionAgent --> VipCare["🎁 VIP 挽留礼金自动派发 (阶梯式关怀券)"]
+    ActionAgent --> AntiFraud["🛡️ 反欺诈与黑灰产撞库多维检测"]
+    
+    Copilot --> JEV_Post["🔒 JEV 后置合规质检 (脱敏/禁超额承诺)"]
+    AutoPilot --> JEV_Post
+    JEV_Post --> Client
+    
+    Client -.->|全量会话落库| QAEngine["📊 Phase 4: 全量会话 Auto QA 质检引擎 (5维打分)"]
+    QAEngine --> BIAnalytics["📈 运营根因 BI 深度洞察看板"]
+    BIAnalytics --> ProactiveBroad["📢 全网通道主动式故障预测广播"]
+    
+    Copilot -.->|坐席修改草稿 Diff 捕获| Flywheel["🔄 Phase 5: 自学习知识蒸馏飞轮"]
+    Flywheel --> CandidatePool["💡 优质话术候选池 (支持坐席与质检复核)"]
+    CandidatePool -->|一键审核沉淀| RAG
+    CandidatePool --> ShadowSandbox["🧪 影子评测沙箱 (候选模型 vs 基线模型 A/B 对比)"]
+          </div>
+          <div class="diagram-caption">图 1: CoreDesk 全生命周期双引擎系统架构拓扑</div>
+        </div>
+      </section>
+
+      <!-- Section 3: Logical Layers -->
+      <section class="doc-section" id="layers">
+        <h2 class="section-title"><span class="title-num">03</span> 逻辑分层与职责边界</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>架构层级</th>
+                <th>主要组件</th>
+                <th>输入数据</th>
+                <th>输出产物</th>
+                <th>核心职责与边界</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>接入层</strong></td>
+                <td><code>im_channel_gateway.py</code></td>
+                <td>原始 Webhook / HTTP Payload</td>
+                <td>标准 <code>MessageEnvelope</code></td>
+                <td>渠道签名验证、消息去重幂等、用户跨渠道绑定，不参与业务逻辑</td>
+              </tr>
+              <tr>
+                <td><strong>安全网关层</strong></td>
+                <td><code>jev_gateway.py</code></td>
+                <td>纯文本消息内容</td>
+                <td>语言识别、意图标签、越狱判定</td>
+                <td>耗时 &lt; 1ms，拦截恶意输入与敏感词，无状态高并发执行</td>
+              </tr>
+              <tr>
+                <td><strong>事实与知识层</strong></td>
+                <td><code>mock_billing.py</code><br><code>rag_engine.py</code></td>
+                <td>用户 ID、订单号、意图</td>
+                <td>流水差额、资产快照、SOP规则</td>
+                <td>只读 CQRS 直连，绝不执行写事务，暴露 <code>as_of</code> 新鲜度时间戳</td>
+              </tr>
+              <tr>
+                <td><strong>裁决与调度层</strong></td>
+                <td><code>risk_engine.py</code><br><code>acd_routing_engine.py</code></td>
+                <td>事实快照、情绪指数、系统模式</td>
+                <td>执行模式、分配坐席、诊断卡</td>
+                <td>分级放行门禁，若流水不足坚决阻断直答；ACD 技能组负荷均衡</td>
+              </tr>
+              <tr>
+                <td><strong>执行与动作中台</strong></td>
+                <td><code>action_agent.py</code><br><code>ticket_service.py</code></td>
+                <td>业务操作指令、操作人身份</td>
+                <td>资金补账、打码量冲正、工单流转</td>
+                <td>受控操作，单笔 &le; 2,000 免审，大额自动建单，全量审计流落库</td>
+              </tr>
+              <tr>
+                <td><strong>出口质检层</strong></td>
+                <td><code>jev_post_guard.py</code></td>
+                <td>候选回复文本</td>
+                <td>脱敏文本、阻断标志</td>
+                <td>银行卡号脱敏、手机号掩码、违规超额承诺 100% 阻断</td>
+              </tr>
+              <tr>
+                <td><strong>质量与演进层</strong></td>
+                <td><code>qa_analytics_engine.py</code><br><code>knowledge_flywheel.py</code></td>
+                <td>完整会话轨迹、坐席编辑 Diff</td>
+                <td>五维质检分、候选规则、影子评测报告</td>
+                <td>会话落库即打分，优质修改自动提取沉淀入 RAG 知识库</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 4: Phase 1 Deep-Dive -->
+      <section class="doc-section" id="phase1">
+        <h2 class="section-title"><span class="title-num">04</span> Phase 1 详细设计: Copilot 辅助化与安全底座</h2>
+        
+        <h3 class="sub-title">4.1 毫秒级多语言识别与越狱拦截</h3>
+        <p>
+          在 <code>jev_gateway.py</code> 中，前置识别引擎结合轻量正则与字符集特征，在零外部网络调用损耗下实现高精度判定：
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>app/services/jev_gateway.py (多语言快速探测核心)</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code>def detect_language(self, text: str) -> str:
+    # 泰文字符范围 (Thai Unicode Block)
+    if re.search(r"[\u0e00-\u0e7f]", text):
+        return "th"
+    # 汉字范围 (CJK Unified Ideographs)
+    if re.search(r"[\u4e00-\u9fa5]", text):
+        return "zh"
+    # 越南文特征声调字符 (Vietnamese tone marks)
+    if re.search(r"[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]", text, re.IGNORECASE):
+        return "vi"
+    # 默认判定为英语
+    return "en"</code></pre>
+        </div>
+
+        <h3 class="sub-title">4.2 CQRS 账务只读直连架构</h3>
+        <p>
+          针对提现流水、打码量对账等高频压力，系统与交易主库严格实施物理级读写分离：
+        </p>
+        <div class="callout callout-warn">
+          <strong>只读原则：</strong> 客服系统禁止向交易账本发起任何写锁请求。提现卡单诊断时，系统在内存中根据 <code>required_turnover</code> 与 <code>completed_turnover</code> 实时试算差额。
+        </div>
+      </section>
+
+      <!-- Section 5: Phase 2 Deep-Dive -->
+      <section class="doc-section" id="phase2">
+        <h2 class="section-title"><span class="title-num">05</span> Phase 2 详细设计: Auto-Pilot 自动驾驶、危机雷达与工单 Hub</h2>
+
+        <!-- Interactive Tabs for P2 -->
+        <div class="tabs-header">
+          <button class="tab-btn active" onclick="switchTab(this, 'p2-gating')">🛡️ 分级放行门禁 (Gating Engine)</button>
+          <button class="tab-btn" onclick="switchTab(this, 'p2-sentiment')">🔥 客诉危机雷达 (Sentiment Radar)</button>
+          <button class="tab-btn" onclick="switchTab(this, 'p2-ticket')">🎫 工单生命周期 (TicketHub)</button>
+        </div>
+
+        <div class="tab-pane active" id="p2-gating">
+          <p>
+            即使系统全局处于 <code>auto_pilot</code> 自主应答模式，<code>RiskDecisionEngine</code> 依然对每一次进线进行逐笔准入裁决：
+          </p>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>风险级别</th>
+                  <th>判定特征与条件</th>
+                  <th>放行 Auto-Pilot?</th>
+                  <th>系统执行策略</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>CRITICAL</code></td>
+                  <td>命中 Prompt 注入、黑灰产刷单特征</td>
+                  <td>❌ 绝对阻断</td>
+                  <td>阻断交互，记录安全日志，不触发回复</td>
+                </tr>
+                <tr>
+                  <td><code>HIGH</code></td>
+                  <td>打码量欠额 &gt; 0、提现订单卡单审核、P0 愤怒危机</td>
+                  <td>❌ 强制降级</td>
+                  <td>转为 Copilot 草稿，弹出根因诊断卡，自动建单</td>
+                </tr>
+                <tr>
+                  <td><code>MEDIUM</code></td>
+                  <td>P1 催单焦虑情绪、首次充值超时咨询</td>
+                  <td>❌ 降级人工</td>
+                  <td>生成结构化坐席指引，坐席一键微调</td>
+                </tr>
+                <tr>
+                  <td><code>LOW</code></td>
+                  <td>标准规则咨询 (FAQ)、充值已到账确认、情绪平和</td>
+                  <td>✅ 闪电直答</td>
+                  <td>Auto-Pilot 直接回发，附带抢单接管标记</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="p2-sentiment">
+          <p>
+            多语言情绪雷达实时计算四国语境下的情感倾向指数与紧急度：
+          </p>
+          <ul>
+            <li><code>P0_CRITICAL</code>：包含“骗子平台”、“报警举报”、“退钱”、“lừa đảo”、“โกง”等维权词汇，触发系统级红色呼吸告警。</li>
+            <li><code>P1_URGENT</code>：包含“快点到账”、“急用”、“催一下”，提示坐席优先响应。</li>
+            <li><code>P2_NORMAL</code>：常规平和或积极互动，进入标准处理队列。</li>
+          </ul>
+        </div>
+
+        <div class="tab-pane" id="p2-ticket">
+          <div class="diagram-container">
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> PENDING_REVIEW: 自动建单或坐席手工建单
+    PENDING_REVIEW --> IN_PROGRESS: 财务或专席认领
+    IN_PROGRESS --> NEED_TURNOVER: 核查确认需用户补足打码量
+    IN_PROGRESS --> PAYOUT_APPROVED: 审核通过，推送出款通道
+    NEED_TURNOVER --> IN_PROGRESS: 用户流水补齐或红利扣减冲正
+    PAYOUT_APPROVED --> RESOLVED: 出款成功并自动发放关怀券
+    RESOLVED --> [*]: 归档留痕
+            </div>
+            <div class="diagram-caption">图 2: TicketHub 工单生命周期状态机模型</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 6: Phase 3 Deep-Dive -->
+      <section class="doc-section" id="phase3">
+        <h2 class="section-title"><span class="title-num">06</span> Phase 3 详细设计: Action Agent 自主执行中台</h2>
+        <p>
+          Action Agent 将客服系统从“信息查询”跃迁至“闭环处置”。包含四大原子能力：
+        </p>
+
+        <div class="diagram-container">
+          <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as 会员 / 坐席
+    participant AA as Action Agent 中枢
+    participant Billing as CQRS 账务只读镜像
+    participant CoreAPI as 交易核心执行接口
+    participant Audit as 动作审计中心
+
+    Note over User,Audit: 场景 1: 小额掉单免审核验与自动补单 (<=¥2,000)
+    User->>AA: 发起掉单核验请求 (order_id: CZ20261005002)
+    AA->>Billing: 校验订单记录与链上区块确认 (8/12达成)
+    alt 金额 <= 2000 且链上哈希核验真实
+        AA->>CoreAPI: 调用免审自动补单上分接口
+        CoreAPI-->>AA: 补分入单成功 (tx_id: RECON_881920)
+        AA->>Audit: 写入不可篡改审计流 (状态: EXECUTED)
+        AA-->>User: 返回补账到账成功确认
+    else 金额 > 2000 或哈希异常
+        AA->>Audit: 记录风控截流日志
+        AA-->>User: 触发财务对账加急工单，进入人工审核通道
+    end
+          </div>
+          <div class="diagram-caption">图 3: Action Agent 小额充值掉单补单闭环时序图</div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>操作函数</th>
+                <th>触发门禁与业务边界</th>
+                <th>核心参数</th>
+                <th>安全回退机制</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>reconcile_and_credit_deposit</code></td>
+                <td>单笔额度 &le; 2,000 元，链上哈希核验确认有效</td>
+                <td><code>user_id</code>, <code>order_id</code>, <code>tx_hash</code></td>
+                <td>额度超标时自动降级转财务工单</td>
+              </tr>
+              <tr>
+                <td><code>execute_turnover_waiver</code></td>
+                <td>提现流水差额可通过扣减活动红利完全冲正抵消</td>
+                <td><code>user_id</code>, <code>order_id</code>, <code>deduct_bonus</code></td>
+                <td>红利不足以抵扣流水缺额时驳回并告知</td>
+              </tr>
+              <tr>
+                <td><code>dispatch_vip_retention_care</code></td>
+                <td>客诉危机触发，根据会员等级阶梯式自动派发体验礼金</td>
+                <td><code>user_id</code>, <code>urgency</code>, <code>custom_amount</code></td>
+                <td>单日单用户派发次数设硬顶，防羊毛套利</td>
+              </tr>
+              <tr>
+                <td><code>check_anti_fraud_risk</code></td>
+                <td>检测 IP 聚集、多账号指纹碰撞、设备模拟器特征</td>
+                <td><code>user_id</code></td>
+                <td>高危行为打标并联动出款风控加锁</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 7: Phase 4 Deep-Dive -->
+      <section class="doc-section" id="phase4">
+        <h2 class="section-title"><span class="title-num">07</span> Phase 4 详细设计: 全量会话智能质检 (Auto QA) 与运营 BI</h2>
+        <p>
+          系统实现 100% 全量会话五维自动质检打分（满分 100 分）：
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>打分维度</th>
+                <th>满分</th>
+                <th>质检规则与考评要点</th>
+                <th>扣分违规触发项</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>礼貌与服务态度</strong></td>
+                <td>20 分</td>
+                <td>首句问候规范、全程共情、结束致谢致意</td>
+                <td>生硬打断 (-5)、态度冷淡或负面反问 (-10)</td>
+              </tr>
+              <tr>
+                <td><strong>事实准确与无幻觉</strong></td>
+                <td>25 分</td>
+                <td>严格依据 CQRS 账务事实与官方 SOP 回答</td>
+                <td>捏造账单数据 (-25，严重违规一票否决)</td>
+              </tr>
+              <tr>
+                <td><strong>合规与风控底线</strong></td>
+                <td>25 分</td>
+                <td>禁止泄露卡号手机号、严禁承诺包赔及私下结算</td>
+                <td>绝对性承诺 (-15)、敏感信息未脱敏 (-10)</td>
+              </tr>
+              <tr>
+                <td><strong>响应时效与推进效率</strong></td>
+                <td>20 分</td>
+                <td>首响时间 &lt; 3s，多轮对话推进干脆利落</td>
+                <td>多次无响应导致会话超时 (-5 ~ -10)</td>
+              </tr>
+              <tr>
+                <td><strong>服务规范与问题解决</strong></td>
+                <td>10 分</td>
+                <td>闭环解决用户诉求或正确完成工单流转</td>
+                <td>推诿用户自行处理或无故断连 (-10)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 8: Phase 5 Deep-Dive -->
+      <section class="doc-section" id="phase5">
+        <h2 class="section-title"><span class="title-num">08</span> Phase 5 详细设计: 自学习知识蒸馏飞轮与影子评测沙箱</h2>
+        <p>
+          打破传统客服“模型归模型，人工归人工”的割裂，建立正向数据反馈循环：
+        </p>
+
+        <div class="diagram-container">
+          <div class="mermaid">
+graph LR
+    Draft["AI 初始草稿"] --> AgentEdit["🧑‍💼 坐席手工修改并发送"]
+    AgentEdit --> DiffEngine["⚡ Levenshtein 归一化差异比对"]
+    DiffEngine -->|相似度 0.35~0.75 显著优化| Candidate["💡 知识蒸馏候选池 (Pending)"]
+    Candidate --> Review{"运营一键审核审批"}
+    Review -->|采纳注入| RAG["📚 秒级热加载入 RAG 向量规则库"]
+    Review -->|离线回放| Sandbox["🧪 影子评测沙箱 (Dual-Run 对比)"]
+          </div>
+          <div class="diagram-caption">图 4: Phase 5 知识蒸馏飞轮与模型演进循环</div>
+        </div>
+
+        <p>
+          在影子评测沙箱中，候选模型与生产基线模型并发执行 Dual-Run 离线回放，生成评估报告包含平均时延对比、JEV 合规率与质检置信度，达标后方可一键上线。
+        </p>
+      </section>
+
+      <!-- Section 9: Omnichannel IM Gateway -->
+      <section class="doc-section" id="omnichannel">
+        <h2 class="section-title"><span class="title-num">09</span> IM 全渠道接入网关 (Telegram / WhatsApp / LINE / Web)</h2>
+        <p>
+          <code>IMChannelGateway</code> 提供统一的协议归一化与出站消息分流服务：
+        </p>
+        <ul>
+          <li><strong>Telegram Bot</strong>：基于 Webhook Secret 与官方 Update 对象解析。</li>
+          <li><strong>WhatsApp Cloud API</strong>：支持 Meta 官方验证握手（<code>hub.challenge</code>）与 HMAC-SHA256 签名校验。</li>
+          <li><strong>LINE Messaging API</strong>：基于 <code>X-Line-Signature</code> 签名校验与事件归一化。</li>
+          <li><strong>Web / App 浮窗</strong>：支持 SSE 流式推流与标准 WebSocket。</li>
+        </ul>
+      </section>
+
+      <!-- Section 10: Collaboration -->
+      <section class="doc-section" id="collaboration">
+        <h2 class="section-title"><span class="title-num">10</span> ACD 智能排队调度与班长席监控协同</h2>
+        <p>
+          针对企业级服务运营，中台集成了三大协同引擎：
+        </p>
+        <ol>
+          <li><strong>ACD 技能组路由</strong>：包含财务专席组 (<code>finance_desk</code>)、VIP 尊享管家组 (<code>vip_support</code>)、东南亚多语种组 (<code>sea_multilang_desk</code>) 与综合业务组 (<code>general_desk</code>)，按技能匹配与最小负荷（Least Loaded）优先分配。</li>
+          <li><strong>班长席内部密语 (Whisper)</strong>：主管可在会话监控中向坐席发送实时指导，该卡片在坐席端显眼高亮，客户端严格隔离不可见。</li>
+          <li><strong>会话强插接管 (Barge-in)</strong>：面对复杂或恶性客诉，班长席一键强插接管，原坐席自动转为只读旁听。</li>
+        </ol>
+      </section>
+
+      <!-- Section 11: API Contracts -->
+      <section class="doc-section" id="api-contracts">
+        <h2 class="section-title"><span class="title-num">11</span> 核心 API 与消息信封契约</h2>
+        <p>
+          所有跨渠道消息在进入编排中枢前，统一封装为标准 <code>MessageEnvelope</code>：
+        </p>
+
+        <div class="code-wrapper">
+          <div class="code-header">
+            <span>JSON 契约: MessageEnvelope 标准消息信封</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code>{
+  "trace_id": "tr_20261016_881920",
+  "channel": "TELEGRAM",
+  "channel_user_id": "tg_user_8829",
+  "platform_user_id": "u1001",
+  "tenant_id": "tenant_default",
+  "locale": "zh",
+  "user_text": "提现为什么一直显示审核中？",
+  "received_at": "2026-10-16T14:30:00Z"
+}</code></pre>
+        </div>
+
+        <h3 class="sub-title">11.1 核心 RESTful 端点清单</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>方法</th>
+                <th>URI 路由</th>
+                <th>功能描述</th>
+                <th>核心返回字段</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GET</code></td>
+                <td><code>/api/system/mode</code></td>
+                <td>获取系统当前运行模式</td>
+                <td><code>mode</code>, <code>auto_pilot_rate</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/system/mode</code></td>
+                <td>双向热切换 Copilot / Auto-Pilot</td>
+                <td><code>status</code>, <code>current_mode</code></td>
+              </tr>
+              <tr>
+                <td><code>GET</code></td>
+                <td><code>/api/user/billing-snapshot</code></td>
+                <td>拉取 CQRS 账务只读快照</td>
+                <td><code>balance</code>, <code>turnover_gap</code>, <code>orders</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/chat/receive</code></td>
+                <td>会话进线主网关 (决策+分流+生成)</td>
+                <td><code>intent</code>, <code>draft</code>, <code>can_auto_reply</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/agent/reconcile-deposit</code></td>
+                <td>小额掉单免审补单</td>
+                <td><code>status</code>, <code>credited_amount</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/agent/turnover-waiver</code></td>
+                <td>扣减优惠冲正放行提现</td>
+                <td><code>status</code>, <code>new_order_status</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/agent/vip-retention</code></td>
+                <td>VIP 阶梯关怀礼金发放</td>
+                <td><code>care_voucher_code</code>, <code>amount</code></td>
+              </tr>
+              <tr>
+                <td><code>GET</code></td>
+                <td><code>/api/qa/reports</code></td>
+                <td>获取全量质检记录与 KPI</td>
+                <td><code>qa_records</code>, <code>kpi_summary</code></td>
+              </tr>
+              <tr>
+                <td><code>GET</code></td>
+                <td><code>/api/knowledge/distillation-candidates</code></td>
+                <td>查阅知识蒸馏候选池</td>
+                <td><code>candidates</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/knowledge/approve-candidate</code></td>
+                <td>审批采纳候选规则注入 RAG</td>
+                <td><code>status</code>, <code>added_to_rag</code></td>
+              </tr>
+              <tr>
+                <td><code>POST</code></td>
+                <td><code>/api/sandbox/shadow-evaluation</code></td>
+                <td>触发影子评测沙箱 Dual-Run 比对</td>
+                <td><code>comparison_result</code>, <code>recommendation</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 12: Security & HA -->
+      <section class="doc-section" id="security-ha">
+        <h2 class="section-title"><span class="title-num">12</span> 10W TPS 隔离与零资损防护保障</h2>
+        <div class="callout callout-info">
+          <strong>资金与权限三大铁律：</strong>
+          <ol>
+            <li><strong>对象归属校验</strong>：服务端依据鉴权上下文严格校验查询订单的归属者，禁止依赖用户文本指定的 ID。</li>
+            <li><strong>只读网关白名单</strong>：查询接口仅暴露业务允许字段，内部风控敏感标签（如涉诈排查码）绝对不对外输出。</li>
+            <li><strong>质检脱敏不放过</strong>：即便大模型产生错误输出，后置质检模块依然在网络层强行抹除卡号并阻断赔偿承诺。</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Section 13: Deployment -->
+      <section class="doc-section" id="deployment">
+        <h2 class="section-title"><span class="title-num">13</span> 生产集群拓扑与资源配置</h2>
+        <div class="diagram-container">
+          <div class="mermaid">
+graph TD
+    User["公网用户 / 坐席 / Webhook"] --> SLB["云负载均衡 SLB (443 SSL 卸载)"]
+    SLB --> Ingress["K8s Ingress Controller"]
+    
+    subgraph VPC_Private ["私有网络 VPC (安全私网)"]
+        Ingress --> CoreApp["CoreDesk 微服务集群 (FastAPI 多副本 HPA)"]
+        
+        CoreApp --> Redis["Redis 哨兵/集群 (短期状态/会话锁)"]
+        CoreApp --> ReadDB["MySQL / PG 只读副本 (CQRS 账务只读镜像)"]
+        CoreApp --> WriteDB[("主业务与工单数据库 (持久化)")]
+        CoreApp --> VectorDB["Chroma / Milvus 向量知识库"]
+        CoreApp --> LLM["vLLM / SGLang 推理专区 (或 DeepSeek 专线)"]
+    end
+          </div>
+          <div class="diagram-caption">图 5: CoreDesk 生产高可用网络与集群拓扑</div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>节点类别</th>
+                <th>推荐生产配置</th>
+                <th>高可用 (HA) 方案</th>
+                <th>核心用途</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>CoreDesk App 节点</strong></td>
+                <td>4C 8G × 2 节点</td>
+                <td>K8s Deployment 多副本 + HPA 弹性扩容</td>
+                <td>处理 HTTP/Webhook、JEV 决策、编排调度</td>
+              </tr>
+              <tr>
+                <td><strong>缓存与状态 (Redis)</strong></td>
+                <td>8G 内存集群</td>
+                <td>3 主 3 从 Redis Cluster</td>
+                <td>保存短期会话、工单防重、实时打字缓存</td>
+              </tr>
+              <tr>
+                <td><strong>关系数据库 (RDBMS)</strong></td>
+                <td>8C 16G SSD</td>
+                <td>1 主 1 从只读副本</td>
+                <td>存储工单记录、质检明细、动作审计流</td>
+              </tr>
+              <tr>
+                <td><strong>向量数据库 (Vector)</strong></td>
+                <td>4C 16G SSD</td>
+                <td>主备热备</td>
+                <td>存储中英越泰多语言 RAG 规则索引</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // 初始化 Mermaid
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      securityLevel: 'loose',
+      fontFamily: 'Inter, sans-serif'
+    });
+
+    // 阅读进度条监听
+    window.addEventListener('scroll', () => {
+      const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // 侧边栏平滑高亮监听
+    const sections = document.querySelectorAll('section.doc-section');
+    const navLinks = document.querySelectorAll('.nav-link');
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 120;
+        if (pageYOffset >= sectionTop) {
+          current = section.getAttribute('id');
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+    // 侧边栏搜索过滤
+    document.getElementById('navFilter').addEventListener('input', function(e) {
+      const val = e.target.value.toLowerCase();
+      navLinks.forEach(link => {
+        const text = link.textContent.toLowerCase();
+        if (text.includes(val)) {
+          link.style.display = 'flex';
+        } else {
+          link.style.display = 'none';
+        }
+      });
+    });
+
+    // 暗色 / 明亮主题切换
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    let isDark = true;
+    themeBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        themeIcon.textContent = '☀️';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        themeIcon.textContent = '🌙';
+      }
+    });
+
+    // 标签页切换逻辑
+    function switchTab(btn, paneId) {
+      const container = btn.closest('section');
+      container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(paneId).classList.add('active');
+    }
+
+    // 代码复制逻辑
+    function copyCode(btn) {
+      const pre = btn.closest('.code-wrapper').querySelector('pre');
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const origText = btn.textContent;
+        btn.textContent = '已复制 ✓';
+        btn.style.borderColor = 'var(--accent-emerald)';
+        btn.style.color = 'var(--accent-emerald)';
+        setTimeout(() => {
+          btn.textContent = origText;
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>

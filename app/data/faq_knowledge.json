@@ -1,0 +1,42 @@
+[
+  {
+    "id": "faq_001",
+    "category": "充值问题 / Deposit",
+    "title": "充值多长时间能到账？/ How long does deposit take? / Nạp tiền mất bao lâu?",
+    "content_zh": "正常情况下，USDT/TRC20 链上确认后 1-3 分钟内自动到账；银行卡转账在提交正确附言凭证后 3-5 分钟内到账。若超过 15 分钟未到账，请提供订单号与转账凭证。",
+    "content_en": "Normally, USDT/TRC20 deposits arrive automatically within 1-3 minutes after blockchain confirmation. Bank transfers take 3-5 minutes upon valid proof. If over 15 minutes, please provide transaction slip.",
+    "content_vi": "Thông thường, nạp tiền USDT/TRC20 sẽ tự động cập nhật sau 1-3 phút khi chuỗi khối xác nhận. Chuyển khoản ngân hàng mất 3-5 phút. Nếu quá 15 phút, vui lòng cung cấp biên lai giao dịch.",
+    "content_th": "โดยปกติแล้ว การฝาก USDT/TRC20 จะเข้าบัญชีอัตโนมัติภายใน 1-3 นาทีหลังการยืนยันบล็อกเชน การโอนเงินผ่านธนาคารใช้เวลา 3-5 นาที หากเกิน 15 นาที โปรดแนบสลิปการโอนเงิน",
+    "keywords": ["充值", "到账", "deposit", "nạp tiền", "ฝากเงิน", "usdt"]
+  },
+  {
+    "id": "faq_002",
+    "category": "提现流水 / Withdrawal & Turnover",
+    "title": "提现需要满足多少有效投注流水？/ What is the required turnover for withdrawal? / Cần bao nhiêu vòng cược để rút tiền?",
+    "content_zh": "根据反洗钱风控要求：普通充值需完成 1.0 倍有效投注流水方可申请提现；参与首存红利需满足 10-15 倍流水要求。未达标提现将被系统拦截审核。",
+    "content_en": "Per AML regulations, standard deposits require 1.0x valid turnover before withdrawal. Bonus promotions require 10-15x turnover. Unmet turnover will trigger security audit hold.",
+    "content_vi": "Theo quy định phòng chống rửa tiền, tiền nạp tiêu chuẩn yêu cầu cược hợp lệ 1.0 vòng trước khi rút. Tiền thưởng khuyến mãi yêu cầu 10-15 vòng cược. Chưa đủ vòng cược sẽ bị giữ lại kiểm tra.",
+    "content_th": "ตามข้อกำหนดด้านความปลอดภัย การฝากเงินปกติจะต้องมียอดเทิร์นโอเวอร์ 1.0 เท่าจึงจะสามารถถอนเงินได้ โปรโมชั่นต้องทำเทิร์น 10-15 เท่า หากยังไม่ครบยอดถอนจะถูกระงับเพื่อตรวจสอบ",
+    "keywords": ["提现", "流水", "withdrawal", "turnover", "rút tiền", "vòng cược", "ถอนเงิน", "เทิร์น"]
+  },
+  {
+    "id": "faq_003",
+    "category": "提现审核 / Withdrawal Pending",
+    "title": "提现为什么显示“审核中”？/ Why is my withdrawal pending? / Tại sao lệnh rút tiền đang xử lý?",
+    "content_zh": "提现订单提交后，风控中台自动校验投注与打码量。常规出款 5-15 分钟处理完毕；若触发大额抽检或流水不足核实，一般在 30-60 分钟内完成，资金绝对安全。",
+    "content_en": "After submission, risk control automatically verifies betting and turnover. Standard payouts complete in 5-15 mins. Large or audit payouts take 30-60 mins. Your funds are strictly safe.",
+    "content_vi": "Sau khi gửi lệnh, hệ thống kiểm soát rủi ro tự động đối soát doanh thu cược. Rút tiền thông thường mất 5-15 phút. Trường hợp cần rà soát thủ công mất 30-60 phút, tiền của quý khách tuyệt đối an toàn.",
+    "content_th": "หลังจากส่งคำขอ ระบบควบคุมความเสี่ยงจะตรวจสอบยอดเทิร์นโอเวอร์อัตโนมัติ โดยทั่วไปการถอนจะเสร็จสิ้นใน 5-15 นาที หากติดตรวจสอบจะใช้เวลา 30-60 นาที เงินของคุณปลอดภัยแน่นอน",
+    "keywords": ["审核中", "卡单", "pending", "audit", "đang xử lý", "รอตรวจสอบ", "ถอนช้า"]
+  },
+  {
+    "id": "faq_005",
+    "category": "返水与优惠 / Rebate & Cashback",
+    "title": "每日返水洗码什么时候发放？/ When is daily rebate distributed? / Khi nào hoàn trả hàng ngày được phát?",
+    "content_zh": "每日洗码/返水于次日凌晨 03:00 结算，并在中午 12:00 前自动派发至主账户。返水享有 0 流水要求，可直接参与游戏或提现。",
+    "content_en": "Daily cashback/rebate settles at 03:00 AM next day and distributes automatically by 12:00 PM. Rebates carry 0x turnover and can be withdrawn directly.",
+    "content_vi": "Tiền hoàn trả hàng ngày được kết toán lúc 03:00 sáng hôm sau và tự động phát trước 12:00 trưa. Tiền hoàn trả 0 vòng cược, có thể rút trực tiếp.",
+    "content_th": "ยอดคืนเงิน/คอมมิชชั่นรายวันจะสรุปเวลา 03:00 น. วันถัดไป และแจกจ่ายอัตโนมัติก่อน 12:00 น. ไม่มีข้อกำหนดเทิร์นโอเวอร์ สามารถถอนได้ทันที",
+    "keywords": ["返水", "洗码", "rebate", "cashback", "hoàn trả", "คืนเงิน", "ค่าคอม"]
+  }
+]

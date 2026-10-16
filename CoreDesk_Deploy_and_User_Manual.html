@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreDesk 智能客服系统 · 服务器部署与操作使用手册</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-sub: #f1f5f9;
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-sub: #64748b;
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --primary-light: #e0f2fe;
+      --success: #15803d;
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --warn: #b45309;
+      --warn-bg: #fffbeb;
+      --warn-border: #fde68a;
+      --danger: #b91c1c;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --code-bg: #1e293b;
+      --code-text: #f8fafc;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 15px; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 顶部导航与文档信息条 */
+    .top-bar {
+      background: #0f172a;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 10px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+    }
+    .top-bar-left {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .top-bar-left span.brand {
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .top-bar-right {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* 头部 Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 24px;
+    }
+    .header-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+    }
+    .doc-meta {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      background: var(--surface-sub);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .badge-primary {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-color: #bae6fd;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .doc-desc {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 860px;
+      line-height: 1.6;
+    }
+
+    /* 主布局 */
+    .layout-container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 36px;
+    }
+
+    /* 侧边索引目录 */
+    aside.sidebar {
+      position: sticky;
+      top: 24px;
+      height: fit-content;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .sidebar-heading {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .nav-group {
+      margin-bottom: 16px;
+    }
+    .nav-group:last-child {
+      margin-bottom: 0;
+    }
+    .nav-group-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-list a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      display: block;
+      transition: all 0.15s ease;
+    }
+    .nav-list a:hover {
+      color: var(--primary-dark);
+      background: var(--surface-sub);
+    }
+    .nav-list a.active {
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      font-weight: 600;
+    }
+
+    /* 主内容区域 */
+    main.doc-content {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    section.doc-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 32px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin: 24px 0 10px;
+    }
+    p {
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      font-size: 14.5px;
+    }
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      font-size: 14.5px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* 表格 */
+    .table-container {
+      overflow-x: auto;
+      margin: 16px 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+    th {
+      background: var(--surface-sub);
+      color: var(--text-main);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    tr:hover td {
+      background: #fafafa;
+    }
+
+    /* 提示卡片 */
+    .callout {
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: 16px 0;
+      font-size: 14px;
+      border-left: 4px solid;
+    }
+    .callout-info {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: #0369a1;
+    }
+    .callout-warn {
+      background: var(--warn-bg);
+      border-color: var(--warn);
+      color: #92400e;
+    }
+    .callout-danger {
+      background: var(--danger-bg);
+      border-color: var(--danger);
+      color: #991b1b;
+    }
+    .callout-success {
+      background: var(--success-bg);
+      border-color: var(--success);
+      color: #166534;
+    }
+    .callout-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* 代码块 */
+    .code-block {
+      background: var(--code-bg);
+      border-radius: 6px;
+      margin: 14px 0 18px;
+      overflow: hidden;
+    }
+    .code-header {
+      background: #0f172a;
+      padding: 6px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #94a3b8;
+      font-family: var(--font-mono);
+      border-bottom: 1px solid #334155;
+    }
+    .copy-btn {
+      background: #334155;
+      color: #f1f5f9;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+    .copy-btn:hover {
+      background: #475569;
+    }
+    pre {
+      padding: 14px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--code-text);
+    }
+    code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: var(--surface-sub);
+      color: #0369a1;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      border: none;
+      color: inherit;
+    }
+
+    /* 步骤流式卡片 */
+    .flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .flow-step {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      background: #fafafa;
+    }
+    .flow-step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .flow-step-num {
+      width: 22px;
+      height: 22px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .flow-step-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .flow-step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* 架构与组件网格 */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .comp-box {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
+      background: #ffffff;
+    }
+    .comp-box h4 {
+      font-size: 14px;
+      color: var(--text-main);
+      margin-bottom: 4px;
+    }
+    .comp-box p {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+
+    /* 浮动打印按扭 */
+    .print-float-btn {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+    }
+    .print-float-btn:hover {
+      background: #1e293b;
+    }
+
+    /* 打印优化 */
+    @media print {
+      body { background: #fff; font-size: 12pt; }
+      header { border-bottom: 2px solid #000; padding: 15px 0; }
+      .top-bar, .sidebar, .print-float-btn, .copy-btn { display: none !important; }
+      .layout-container { display: block; padding: 0; max-width: 100%; }
+      section.doc-section { border: 1px solid #ddd; margin-bottom: 20px; page-break-inside: avoid; }
+      .code-block { background: #f8fafc; border: 1px solid #cbd5e1; color: #000; }
+      pre { color: #000; }
+    }
+
+    @media (max-width: 820px) {
+      .layout-container { grid-template-columns: 1fr; }
+      aside.sidebar { display: none; }
+      .comp-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部信息条 -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="brand">CoreDesk</span>
+      <span>版本：V3.0 生产实施规范版</span>
+    </div>
+    <div class="top-bar-right">
+      <span>适用范围：研发 / 运维 / 客服运营</span>
+      <span>更新时间：2026-10-07</span>
+    </div>
+  </div>
+
+  <!-- 文档头 -->
+  <header>
+    <div class="header-inner">
+      <div class="doc-meta">
+        <span class="badge badge-primary">技术部署 & 业务实操手册</span>
+        <span class="badge">生产就绪</span>
+        <span class="badge">多语言矩阵 (ZH / EN / VI / TH)</span>
+      </div>
+      <h1>CoreDesk 智能客服中台 · 部署与操作手册</h1>
+      <p class="doc-desc">
+        本文档提供 CoreDesk 客服系统的生产部署流程、网络拓扑与反向代理配置指南，并详细阐述坐席接待、模式切换、异常流水处置、工单流转、质检与知识库热更新的具体操作步骤。
+      </p>
+    </div>
+  </header>
+
+  <!-- 容器布局 -->
+  <div class="layout-container">
+
+    <!-- 侧边导航 -->
+    <aside class="sidebar">
+      <div class="sidebar-heading">目录索引</div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">第一部分：服务器部署</div>
+        <ul class="nav-list">
+          <li><a href="#arch">1. 系统组成与依赖</a></li>
+          <li><a href="#server-reqs">2. 服务器与端口要求</a></li>
+          <li><a href="#deploy-docker">3. Docker 容器部署 (推荐)</a></li>
+          <li><a href="#deploy-systemd">4. Linux Systemd 部署</a></li>
+          <li><a href="#nginx-proxy">5. Nginx 与 SSL 配置</a></li>
+          <li><a href="#im-channels">6. IM 渠道接入 (Telegram/WA/LINE)</a></li>
+          <li><a href="#ops-faq">7. 运维排查与备份</a></li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">第二部分：系统操作使用</div>
+        <ul class="nav-list">
+          <li><a href="#ui-layout">8. 工作台布局与多语言</a></li>
+          <li><a href="#modes">9. 运行模式 (Copilot / 自动)</a></li>
+          <li><a href="#chat-flow">10. 会话接待与坐席接管</a></li>
+          <li><a href="#im-workspace">11. IM 全渠道网关管理操作</a></li>
+          <li><a href="#flow-card">12. 提现卡单与流水诊断</a></li>
+          <li><a href="#action-hub">13. 业务执行中台 (补单/冲正)</a></li>
+          <li><a href="#ticket-hub">14. 工单生命周期流转</a></li>
+          <li><a href="#qa-bi">15. 自动质检与运营看板</a></li>
+          <li><a href="#knowledge-flywheel">16. 知识库维护与沙箱评测</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- 文档主体 -->
+    <main class="doc-content">
+
+      <!-- ================= 第一部分：服务器部署 ================= -->
+
+      <!-- 1. 系统组成 -->
+      <section class="doc-section" id="arch">
+        <h2>1. 系统组成与运行依赖</h2>
+        <p>
+          CoreDesk 采用前后端一体化微服务架构，核心后端基于 Python 3.11 与 FastAPI 框架构建，前端由原生响应式 HTML5 / CSS3 / JavaScript 单页应用渲染，不依赖复杂的外部前端编译环境。
+        </p>
+
+        <div class="comp-grid">
+          <div class="comp-box">
+            <h4>服务主体 (FastAPI + Uvicorn)</h4>
+            <p>负责 HTTP API 响应、意图识别与安全决策网关调度、状态流转与前端静态页面分发。</p>
+          </div>
+          <div class="comp-box">
+            <h4>只读账务代理 (CQRS Gateway)</h4>
+            <p>连接核心业务交易库只读镜像，提供账户资产、流水打码量与提现订单状态，避免锁表风险。</p>
+          </div>
+          <div class="comp-box">
+            <h4>知识中台与持久化存储</h4>
+            <p>RAG 规则数据存储于 <code>app/data/faq_knowledge.json</code>，支持热加载更新，无需每次重启服务。</p>
+          </div>
+          <div class="comp-box">
+            <h4>安全决策与后置质检</h4>
+            <p>输入前置过滤 Prompt 注入与敏感词，输出后置执行脱敏与违规承诺核验。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 服务器要求 -->
+      <section class="doc-section" id="server-reqs">
+        <h2>2. 服务器环境与端口规划</h2>
+        <p>根据预估的客服进线量与业务规模，建议按照以下硬件标准进行云服务器配置采购：</p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>部署规格</th>
+                <th>CPU / 内存</th>
+                <th>磁盘空间</th>
+                <th>公网带宽</th>
+                <th>建议使用场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>测试验证 / POC</td>
+                <td>1 核 / 2 GB</td>
+                <td>20 GB SSD</td>
+                <td>1 ~ 2 Mbps</td>
+                <td>功能演示、内部联调测试</td>
+              </tr>
+              <tr>
+                <td>标准生产配置</td>
+                <td>2 核 / 4 GB</td>
+                <td>50 GB SSD</td>
+                <td>5 Mbps 以上</td>
+                <td>日常生产环境，500~2000 会话/分钟</td>
+              </tr>
+              <tr>
+                <td>大促集群高可用</td>
+                <td>4 核 / 8 GB</td>
+                <td>100 GB SSD</td>
+                <td>10 Mbps 以上</td>
+                <td>高并发业务高峰，配合 Docker 负载均衡</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>网络与防火墙端口要求</h3>
+        <p>请确保在云平台安全组（Security Group）及服务器本机防火墙中放行以下端口：</p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>端口号</th>
+                <th>网络协议</th>
+                <th>对应服务</th>
+                <th>访问说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>80</code></td>
+                <td>TCP</td>
+                <td>Nginx (HTTP)</td>
+                <td>面向客户端或坐席浏览器访问，生产中一般重定向到 443</td>
+              </tr>
+              <tr>
+                <td><code>443</code></td>
+                <td>TCP</td>
+                <td>Nginx (HTTPS)</td>
+                <td>生产必须开放，配置 SSL 证书加密通信</td>
+              </tr>
+              <tr>
+                <td><code>8000</code></td>
+                <td>TCP</td>
+                <td>CoreDesk 应用端口</td>
+                <td>若使用 Nginx 反向代理，可仅限 <code>127.0.0.1</code> 内网访问，不对公网开放</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 3. Docker 部署 -->
+      <section class="doc-section" id="deploy-docker">
+        <h2>3. 方案一：Docker Compose 容器部署 (推荐)</h2>
+        <p>
+          生产环境推荐使用 Docker Compose 进行容器化部署。镜像内已封装完整运行环境，且配置了宿主机数据卷挂载，容器重建或升级镜像时知识库数据不会丢失。
+        </p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">1</span>
+              <span class="flow-step-title">安装 Docker 与 Docker Compose 插件</span>
+            </div>
+            <div class="flow-step-desc">
+              以 Ubuntu / Debian 系统为例，运行以下命令完成基础容器环境准备：
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>bash</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              </div>
+              <pre><code># 安装 Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo systemctl enable --now docker
+
+# 安装 Docker Compose 插件
+sudo apt-get update && sudo apt-get install -y docker-compose-plugin</code></pre>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">2</span>
+              <span class="flow-step-title">同步代码并进入部署目录</span>
+            </div>
+            <div class="flow-step-desc">
+              创建生产部署路径（例如 <code>/opt/coredesk</code>）并将代码拉取到该目录：
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>bash</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              </div>
+              <pre><code>sudo mkdir -p /opt/coredesk && sudo chown -R $USER:$USER /opt/coredesk
+cd /opt/coredesk
+# 将代码克隆或上传至本目录</code></pre>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">3</span>
+              <span class="flow-step-title">启动容器服务</span>
+            </div>
+            <div class="flow-step-desc">
+              在包含 <code>docker-compose.yml</code> 的项目根目录下执行构建与后台启动：
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>bash</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              </div>
+              <pre><code># 启动容器并在后台运行
+docker compose up -d --build
+
+# 检查容器状态
+docker compose ps</code></pre>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">4</span>
+              <span class="flow-step-title">检查健康状态与日志输出</span>
+            </div>
+            <div class="code-block">
+              <div class="code-header">
+                <span>bash</span>
+                <button class="copy-btn" onclick="copyCode(this)">复制</button>
+              </div>
+              <pre><code># 跟踪实时日志输出
+docker compose logs -f coredesk</code></pre>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 0;">
+              日志中显示 <code>Application startup complete</code> 且状态显示 <code>(healthy)</code> 即表示启动成功。此时可通过浏览器访问 <code>http://&lt;服务器公网IP&gt;:8000</code>。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-title">容器数据持久化机制</div>
+          <code>docker-compose.yml</code> 默认将宿主机的 <code>./app/data</code> 目录挂载到容器内部。这意味着知识库规则、FAQ 配置均直接保存在宿主机物理磁盘上，重新构建或停止容器不会丢失数据。
+        </div>
+      </section>
+
+      <!-- 4. Systemd 部署 -->
+      <section class="doc-section" id="deploy-systemd">
+        <h2>4. 方案二：Linux Systemd 守护部署</h2>
+        <p>若服务器不具备 Docker 环境，可使用标准 Python 虚拟环境配合系统级的 Systemd 守护进程运行：</p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash - 1. 安装 Python 3 环境与依赖</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code>sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-venv git
+cd /opt/coredesk
+python3 -m venv venv
+./venv/bin/pip install --upgrade pip
+./venv/bin/pip install -r requirements.txt</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash - 2. 注册并启动 systemd 系统服务</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code># 复制服务单元文件至系统目录
+sudo cp coredesk.service /etc/systemd/system/coredesk.service
+
+# 重载配置并设置开机自启
+sudo systemctl daemon-reload
+sudo systemctl enable --now coredesk
+
+# 查看运行状态
+sudo systemctl status coredesk</code></pre>
+        </div>
+      </section>
+
+      <!-- 5. Nginx 配置 -->
+      <section class="doc-section" id="nginx-proxy">
+        <h2>5. Nginx 反向代理与 SSL/HTTPS 配置</h2>
+        <p>
+          对外提供正式生产服务时，建议配置 Nginx 作为前置反向代理服务器，处理客户端连接复用、SSL 加密与静态资源缓存：
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash - 复制配置文件并修改域名</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code>sudo apt-get install -y nginx
+sudo cp nginx/coredesk.conf /etc/nginx/conf.d/coredesk.conf
+
+# 编辑配置文件，将 server_name 替换为您实际的域名
+sudo nano /etc/nginx/conf.d/coredesk.conf
+
+# 测试配置并重载 Nginx
+sudo nginx -t
+sudo systemctl reload nginx</code></pre>
+        </div>
+
+        <h3>申请 Let's Encrypt 免费 SSL 证书</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span>bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+          </div>
+          <pre><code>sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d cs.yourcompany.com</code></pre>
+        </div>
+      </section>
+
+      <!-- 6. IM 渠道接入配置 -->
+      <section class="doc-section" id="im-channels">
+        <h2>6. 全渠道即时通讯 (IM) 接入配置</h2>
+        <p>
+          系统内置统一 IM 接入网关，支持将 Telegram Bot、Meta WhatsApp Cloud API 与 LINE 官方账号的消息聚合到 CoreDesk 中台统一接待：
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>即时通讯渠道</th>
+                <th>服务端 Webhook 路由</th>
+                <th>协议与验证机制</th>
+                <th>回发出站目标</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Telegram Bot</strong></td>
+                <td><code>POST /api/webhook/telegram</code></td>
+                <td>验证 <code>X-Telegram-Bot-Api-Secret-Token</code> 标头</td>
+                <td><code>api.telegram.org/bot&lt;TOKEN&gt;/sendMessage</code></td>
+              </tr>
+              <tr>
+                <td><strong>WhatsApp Cloud API</strong></td>
+                <td><code>GET / POST /api/webhook/whatsapp</code></td>
+                <td>GET 握手验证 <code>hub.verify_token</code>；POST 验签 <code>X-Hub-Signature-256</code></td>
+                <td><code>graph.facebook.com/v19.0/&lt;PHONE_ID&gt;/messages</code></td>
+              </tr>
+              <tr>
+                <td><strong>LINE Messaging API</strong></td>
+                <td><code>POST /api/webhook/line</code></td>
+                <td>验证 <code>X-Line-Signature</code> (HMAC-SHA256 Base64)</td>
+                <td><code>api.line.me/v2/bot/message/reply</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>账号安全绑定流程 (Account Binding)</h3>
+        <p>
+          第三方渠道首次进线并查询敏感资产（提现、充值、余额、流水）时，为防止非法越权，系统强制执行身份绑定校验：
+        </p>
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">1</span>
+              <span class="flow-step-title">未绑定状态越权查账拦截</span>
+            </div>
+            <div class="flow-step-desc">
+              若未绑定账号尝试查询个人订单或流水，系统自动阻断并回发绑定引导：“您尚未绑定平台会员账号，请在会员中心获取绑定码，在此回复 /bind &lt;绑定码&gt; 完成关联”。
+            </div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">2</span>
+              <span class="flow-step-title">动态指令关联</span>
+            </div>
+            <div class="flow-step-desc">
+              用户在 Telegram / WhatsApp / LINE 聊天框直接回复 <code>/bind &lt;绑定码&gt;</code>，系统秒级完成双向绑定，后续查询直接打通 CQRS 账务只读数据。
+            </div>
+          </div>
+        </div>
+
+        <h3>消息防重与幂等处理</h3>
+        <p>
+          第三方平台（特别是 Telegram 和 WhatsApp）在网络抖动或超时后会自动重推同一消息。CoreDesk 网关内置 300 秒滑动窗口幂等集合，对相同 <code>(channel, message_id)</code> 执行自动去重拦截，防止重复回复或重复建单。
+        </p>
+      </section>
+
+      <!-- 7. 运维排查与备份 -->
+      <section class="doc-section" id="ops-faq">
+        <h2>7. 运维排查与日常备份</h2>
+        
+        <div class="callout callout-warn">
+          <div class="callout-title">常见问题 1：部署后外网无法访问？</div>
+          <ol style="margin-left: 18px; margin-top: 4px;">
+            <li>登录阿里云/腾讯云等控制台，检查当前实例绑定的<strong>安全组入方向规则</strong>是否放行了 80、443 或 8000 端口；</li>
+            <li>在服务器内部执行 <code>curl -I http://127.0.0.1:8000/api/system/mode</code>，若内网能通说明应用正常，问题在于外部网络或防火墙；</li>
+            <li>若使用 Ubuntu 系统，请检查 ufw 状态：<code>sudo ufw status</code>，必要时放行端口：<code>sudo ufw allow 80/tcp</code>。</li>
+          </ol>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-title">常见问题 2：知识库数据备份与迁移</div>
+          系统所有的规则库与问答知识位于 <code>app/data/faq_knowledge.json</code>。日常备份只需定期备份该文件或 <code>app/data</code> 目录即可：
+          <pre style="margin-top: 8px; background: #fff; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; color: #0f172a;"><code>tar -czvf coredesk_backup_$(date +%F).tar.gz app/data/</code></pre>
+        </div>
+
+        <div class="callout callout-danger">
+          <div class="callout-title">日志查看指令</div>
+          <ul>
+            <li>Docker 部署环境：<code>docker compose logs -f --tail=200 coredesk</code></li>
+            <li>Systemd 部署环境：<code>sudo journalctl -u coredesk -f -n 200</code></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ================= 第二部分：系统操作使用 ================= -->
+
+      <!-- 7. 工作台布局 -->
+      <section class="doc-section" id="ui-layout">
+        <h2>7. 工作台布局与多语言支持</h2>
+        <p>在浏览器打开系统地址后，即可进入 CoreDesk 坐席主工作台。界面采用高效三栏分区布局：</p>
+
+        <div class="comp-grid">
+          <div class="comp-box">
+            <h4>左栏：会员画像与账务直连视图</h4>
+            <p>展示当前会话会员的 VIP 等级、账户总资产、可提现余额、当前已打码量与提现打码门槛。下方为异常事件诊断卡与智能执行中台。</p>
+          </div>
+          <div class="comp-box">
+            <h4>中栏：实时接待与输入交互区</h4>
+            <p>包含客诉危机雷达警示条、全网通道广播条、会员与客服消息气泡流、AI 草稿建议卡片，以及坐席输入框与快捷操作键。</p>
+          </div>
+          <div class="comp-box">
+            <h4>右栏：中台业务枢纽 (Tab 分页)</h4>
+            <p>包含三大核心管理模块：【工单中心】、【全量质检与运营 BI 看板】、【知识自学习飞轮与评测沙箱】。</p>
+          </div>
+          <div class="comp-box">
+            <h4>顶栏：全局控制与模式切换</h4>
+            <p>包含系统运行模式（Copilot / 自动驾驶）切换胶囊、当前系统健康状态，以及四国语言热切换选项。</p>
+          </div>
+        </div>
+
+        <h3>多语言热切换</h3>
+        <p>
+          工作台右上角支持 <strong>🇨🇳 简体中文 (ZH)</strong>、<strong>🇬🇧 English (EN)</strong>、<strong>🇻🇳 Tiếng Việt (VI)</strong> 与 <strong>🇹🇭 ภาษาไทย (TH)</strong> 四国语言。点击对应语言标签后，全站所有静态词条、账务状态标签以及后续生成的草稿模板均自动同步切换至目标语种。
+        </p>
+      </section>
+
+      <!-- 8. 运行模式 -->
+      <section class="doc-section" id="modes">
+        <h2>8. 运行模式机制说明</h2>
+        <p>系统顶部中央设有运行模式切换开关，分为两种工作模式：</p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>运行模式</th>
+                <th>工作机制</th>
+                <th>风控安全边界</th>
+                <th>建议适用时段</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Copilot (坐席辅助草稿)</strong></td>
+                <td>会员进线后，系统生成事实建议草稿展示在坐席输入框上方。草稿不自动发出，由坐席审核或修改后手动点击发送。</td>
+                <td>由人工坐席承担最终审核责任，系统主要提供事实对齐与规范性话术支持。</td>
+                <td>新员工上岗、重大版本升级、活动促销高峰及敏感客诉频发时段。</td>
+              </tr>
+              <tr>
+                <td><strong>Auto-Pilot (自动驾驶分流)</strong></td>
+                <td>常规业务咨询（规则、FAQ、无欠额流水）由系统直接答复会员，气泡附带自动应答标识。</td>
+                <td><strong>高风险硬性拦截</strong>：若识别到流水不足、提现卡单或负向客诉，系统<strong>阻断直发</strong>，强制降级为草稿并生成诊断卡。</td>
+                <td>日常白班或夜班低人力时段，自动承接标准问题，减轻坐席负担。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 9. 会话接待与坐席接管 -->
+      <section class="doc-section" id="chat-flow">
+        <h2>9. 实时会话接待与人工接管流程</h2>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">1</span>
+              <span class="flow-step-title">接收进线与意图识别</span>
+            </div>
+            <div class="flow-step-desc">
+              会员消息进线后，前置安全网关在 1 毫秒内完成意图判别、语言识别与防越狱拦截。
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">2</span>
+              <span class="flow-step-title">查看 AI 草稿与采纳发送</span>
+            </div>
+            <div class="flow-step-desc">
+              在 Copilot 模式下，输入框上方会浮现 AI 组织的标准回复建议：
+              <ul style="margin: 6px 0 0 16px;">
+                <li>点击<strong>「采纳并发送」</strong>：草稿直接发送给会员；</li>
+                <li>点击<strong>「修改草稿」</strong>：草稿自动填入下方输入框，坐席可手工润色后发送。</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">3</span>
+              <span class="flow-step-title">Auto-Pilot 模式下的人工接管</span>
+            </div>
+            <div class="flow-step-desc">
+              当系统处于自动驾驶模式回复时，若坐席发现需要人工介入，可点击气泡上的<strong>「接管会话」</strong>或直接在输入框打字发送，系统将平滑转为人工接管状态。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11. IM 全渠道网关管理操作 -->
+      <section class="doc-section" id="im-workspace">
+        <h2>11. IM 全渠道网关管理与操作</h2>
+        <p>
+          点击顶部主导航栏的<strong>【IM 全渠道网关】</strong>，可进入多渠道统一调度控制台：
+        </p>
+
+        <div class="comp-grid">
+          <div class="comp-box">
+            <h4>1. 跨渠道在线模拟进线终端</h4>
+            <p>
+              提供给运维与质检测试的沙盒控制台。可自由切换 Telegram / WhatsApp / LINE 渠道并输入测试文本，实时查看前置决策、账号绑定拦截、Auto-Pilot 直答与最终回发响应。
+            </p>
+          </div>
+          <div class="comp-box">
+            <h4>2. 渠道账号绑定映射管理</h4>
+            <p>
+              实时查看各 IM 用户 ID（如 Telegram 账号、WhatsApp 手机号）与平台会员 ID 的关联状态，并支持管理端手动录入绑定。
+            </p>
+          </div>
+          <div class="comp-box">
+            <h4>3. 全渠道出站回发审计日志</h4>
+            <p>
+              实时追踪记录向 Telegram Bot API、WhatsApp Graph API 和 LINE 回发的消息摘要、时间戳与 <code>DELIVERED</code> 交付凭据。
+            </p>
+          </div>
+          <div class="comp-box">
+            <h4>4. 多通道状态监控</h4>
+            <p>
+              实时检测各渠道 Webhook 存活状态、签名秘钥有效性及长连接健康度。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12. 提现卡单与流水诊断卡 -->
+      <section class="doc-section" id="flow-card">
+        <h2>12. 提现卡单与流水异常诊断</h2>
+        <p>
+          出款卡单是客服业务中占比最高的咨询类型。系统将账务计算前置，避免坐席手工核算失误：
+        </p>
+        
+        <div class="callout callout-warn">
+          <div class="callout-title">流水缺口自动试算规则</div>
+          当会员咨询“为什么我的提现还没到账”时，系统只读连接账务中台，自动对比：
+          <br><strong>提现要求流水门槛</strong>（例如 ¥50,000） vs <strong>实际已完成打码</strong>（例如 ¥45,000） = <strong>流水差额缺口 ¥5,000</strong>。
+        </div>
+
+        <p>此时工作台左侧将自动唤起<strong>【异常事件根因诊断卡】</strong>：</p>
+        <ul>
+          <li><strong>诊断信息明确</strong>：清晰显示差额 ¥5,000，以及导致卡单的具体充值订单或优惠活动名称。</li>
+          <li><strong>建议话术指引</strong>：提供解释口径，引导会员继续游戏补齐流水，或引导扣除红利。</li>
+          <li><strong>一键发起工单</strong>：若需技术或财务深入排查，点击卡片上的「一键生成工单」，系统自动将订单号、金额与缺口数据带入工单中心。</li>
+        </ul>
+      </section>
+
+      <!-- 13. 业务执行中台 -->
+      <section class="doc-section" id="action-hub">
+        <h2>13. 业务执行中台操作指南 (Action Agent)</h2>
+        <p>坐席可直接在左侧工作区点击快捷功能卡片，处理高频业务闭环，所有操作均记录完整审计日志：</p>
+
+        <div class="comp-grid">
+          <div class="comp-box">
+            <h4>1. 小额掉单核验与补单</h4>
+            <p><strong>规则</strong>：单笔充值金额 ≤ ¥2,000 且渠道侧有有效支付流水时，系统自动核验放行，秒级完成上分入账；若金额超过 ¥2,000 则强制转财务复核工单。</p>
+          </div>
+          <div class="comp-box">
+            <h4>2. 提现流水冲正 (扣减红利)</h4>
+            <p><strong>规则</strong>：会员流水不足但急需出款时，系统智能试算可扣除的优惠彩金（如扣减 ¥500 红利），坐席确认后解除打码限制，提现单放行出款。</p>
+          </div>
+          <div class="comp-box">
+            <h4>3. VIP 挽留关怀券派发</h4>
+            <p><strong>规则</strong>：针对高价值客户因体验不佳产生的客诉，按等级上限派发（VIP 1~2: ¥88, VIP 3~5: ¥288, VIP 6+: ¥888），券码直发会员钱包。</p>
+          </div>
+          <div class="comp-box">
+            <h4>4. 反欺诈与黑灰产检测</h4>
+            <p><strong>规则</strong>：一键扫描该账号的 IP 重合度、设备指纹碰撞与套利特征，输出风险评分（正常 / 建议加锁 / 限制出款）。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 14. 工单中心 -->
+      <section class="doc-section" id="ticket-hub">
+        <h2>14. 工单生命周期流转 (Tickets Hub)</h2>
+        <p>点击右侧面板的<strong>「工单中心」</strong>标签页可查阅工单看板：</p>
+        
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-title">工单状态机定义</span>
+            </div>
+            <div class="flow-step-desc">
+              <code>待审核 (PENDING_REVIEW)</code> → <code>处理中 (IN_PROGRESS)</code> → <code>需补足流水 (NEED_TURNOVER)</code> → <code>已审批出款 (PAYOUT_APPROVED)</code> → <code>已结案 (RESOLVED)</code>
+            </div>
+          </div>
+        </div>
+
+        <p><strong>坐席常用操作</strong>：</p>
+        <ul>
+          <li><strong>审核出款</strong>：财务或值班主管核对通过后，点击出款按钮，状态变更为已出款；</li>
+          <li><strong>发放补偿券</strong>：因平台原因导致严重延迟的工单，可在工单内直接追加关怀券；</li>
+          <li><strong>完结工单</strong>：输入处置结果说明后点击结案，归档至历史记录。</li>
+        </ul>
+      </section>
+
+      <!-- 15. 质检与运营看板 -->
+      <section class="doc-section" id="qa-bi">
+        <h2>15. 全量自动质检与运营 BI 看板</h2>
+        <p>切换至右侧面板的<strong>「质检与运营看板」</strong>标签页：</p>
+
+        <h3>五维全量质检模型</h3>
+        <p>系统对全部服务会话执行百分制自动评分：</p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>质检维度</th>
+                <th>满分权重</th>
+                <th>考核要点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>礼貌与服务态度</td>
+                <td>20 分</td>
+                <td>包含问候致意、共情理解话术，杜绝冷漠与敷衍词汇</td>
+              </tr>
+              <tr>
+                <td>事实准确性与解决率</td>
+                <td>30 分</td>
+                <td>核算流水与订单数据准确，没有事实差错</td>
+              </tr>
+              <tr>
+                <td>合规与风控底线</td>
+                <td>25 分</td>
+                <td>严禁出现“包赔、包赢”承诺，严禁泄露完整银行卡号</td>
+              </tr>
+              <tr>
+                <td>响应时效与推进效率</td>
+                <td>15 分</td>
+                <td>首响时间及会话推进节奏</td>
+              </tr>
+              <tr>
+                <td>服务规范与完整度</td>
+                <td>10 分</td>
+                <td>按照 SOP 规范指引结束会话并提供满意度评价入口</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>运营 BI 洞察与预警广播</h3>
+        <ul>
+          <li><strong>进线分类统计</strong>：动态监控当前进线根因（如提现流水占 42%、银行维护占 28%、充值掉单占 18%）；</li>
+          <li><strong>全网通道主动广播</strong>：运营人员可发布通道故障公告，坐席端顶部即时滚动展示，并支持<strong>「一键引用广播话术至输入框」</strong>。</li>
+        </ul>
+      </section>
+
+      <!-- 16. 知识飞轮与沙箱 -->
+      <section class="doc-section" id="knowledge-flywheel">
+        <h2>16. 知识自学习飞轮与影子沙箱 (Phase 5)</h2>
+        <p>系统具备基于坐席真实改动行为的持续学习与迭代机制：</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">1</span>
+              <span class="flow-step-title">草稿修改差分 (Diff) 捕获</span>
+            </div>
+            <div class="flow-step-desc">
+              当经验丰富的坐席对 AI 提供的草稿进行编辑并发出时，系统后台自动分析修改前后的表达差异。若判定为优质补充，自动提炼并沉淀到候选规则池中。
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">2</span>
+              <span class="flow-step-title">知识库主管一键审批</span>
+            </div>
+            <div class="flow-step-desc">
+              主管在【知识飞轮与沙箱】页面审查候选规则，点击「采纳入库」，该规则立即热加载注入 RAG 知识库，无需重启服务器。
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-step-header">
+              <span class="flow-step-num">3</span>
+              <span class="flow-step-title">影子评测沙箱验证 (A/B Dual-Run)</span>
+            </div>
+            <div class="flow-step-desc">
+              在正式上线新规则前，可在沙箱内发起评测。系统并发调用基线模型与候选模型进行双路测试，对比响应延迟、合规得分并给出采纳建议。
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 浮动操作按扭 -->
+  <button class="print-float-btn" onclick="window.print()">🖨️ 打印 / 另存为 PDF</button>
+
+  <script>
+    // 复制代码块
+    function copyCode(btn) {
+      const pre = btn.closest('.code-block').querySelector('pre code');
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const origin = btn.innerText;
+        btn.innerText = '已复制';
+        btn.style.background = '#15803d';
+        setTimeout(() => {
+          btn.innerText = origin;
+          btn.style.background = '';
+        }, 2000);
+      });
+    }
+
+    // 目录滚动监听高亮
+    window.addEventListener('DOMContentLoaded', () => {
+      const links = document.querySelectorAll('.nav-list a');
+      const sections = document.querySelectorAll('section.doc-section');
+
+      window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(sec => {
+          const top = sec.offsetTop - 100;
+          if (window.pageYOffset >= top) {
+            current = sec.getAttribute('id');
+          }
+        });
+
+        links.forEach(link => {
+          if (link.getAttribute('href') === '#' + current) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

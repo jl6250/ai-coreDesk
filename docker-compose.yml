@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  coredesk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: coredesk:latest
+    container_name: coredesk_app
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - RELOAD=false
+      - TZ=Asia/Shanghai
+    volumes:
+      # 持久化 RAG 知识库与数据文件，确保容器销毁重建后数据不丢失
+      - ./app/data:/app/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/system/mode"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
